@@ -310,4 +310,5 @@ function GetTarget(part, ray)
 	end
 	return hit, targetSurface
 end
+
 return ResizeAlign

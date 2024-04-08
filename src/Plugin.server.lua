@@ -1,3 +1,7 @@
+-- Plugin.server.lua
+-- The main script for the plugin
+-- Authors: Anthony O'Brien
+
 -- Services
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local PluginGuiService = game:GetService("PluginGuiService")

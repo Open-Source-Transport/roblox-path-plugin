@@ -1,8 +1,8 @@
 -- Written by Sublivion
--- Originally intended for SmartCurve
 -- 25/7/19
 
--- Programming interface for creating paths in SmartCurve
+-- A class for creating paths, which are the 'physical' extensions of a Curve
+-- Currently, a Path is composed of a Curve
 
 --[[ Docs
 	
@@ -20,6 +20,8 @@
 		Path.controlPoints = {...}
 		Path.length = number length
 		Path.controlPoints = table of parts
+
+	Note - this is ugly and I should add setters and getters!
 --]]
 
 -- Modules

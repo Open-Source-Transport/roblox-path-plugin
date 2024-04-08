@@ -1,8 +1,6 @@
+-- Cunic bezier curve module
 -- Written by Sublivion
--- Only works for cubic beziers
 -- 25/7/19
-
--- Programming interface for calculating de casteljau bezier curvess
 
 -- Constants
 local LENGTH_STEP = 0.1
