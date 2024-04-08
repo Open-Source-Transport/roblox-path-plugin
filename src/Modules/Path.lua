@@ -95,6 +95,9 @@ function Path.new()
 	function Path:draw(cf0, cf1, fillGaps)
 		-- Check if path is valid, if not pass error message
 		if not self.template or not self.length or not self.canting then
+			print(self.template)
+			print(self.length)
+			print(self.canting)
 			return nil
 		end
 		self.canting = tonumber(self.canting)

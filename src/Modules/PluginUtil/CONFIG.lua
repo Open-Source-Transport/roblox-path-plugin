@@ -1,23 +1,21 @@
 return {
-    pluginId = "BRSoundPlugin",
-    toolbarName = "BR Plugins",
-    widgetTitle = "BR Sound Preview",
+    pluginId = "anthony0br/roblox-path-plugin",
+    toolbarName = "anthony0br/roblox-path-plugin",
+    widgetTitle = "anthony0br/roblox-path-plugin",
     toolbarButton = {
-        Name = "BRSoundPlugin",
-        Text = "Preview sounds",
+        Name = "Track Placer",
+        Text = "Track Placer",
         Image = "",
-        Tooltip = "BR Sound Tool"
+        Tooltip = "Lay some track"
     },
     widgetInfo = DockWidgetPluginGuiInfo.new(
         Enum.InitialDockState.Float,
         false,
         false,
-        200,
         300,
         200,
-        300
+        300,
+        200
     ),
-    accentColor = Color3.fromRGB(110, 136, 232),
-    lengthResolution = 0.025
+    accentColor = Color3.fromRGB(90, 150, 188),
 }
-

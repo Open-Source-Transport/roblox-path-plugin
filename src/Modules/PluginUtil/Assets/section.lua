@@ -18,6 +18,7 @@ return function(self, index, SectionLayout, children)
 
     return New "Frame" {
         Parent = self.data.widget.Scroll,
+        LayoutOrder = index,
         Name = "Section" .. tostring(index),
         BackgroundTransparency = 1,
         Size = Computed(function()

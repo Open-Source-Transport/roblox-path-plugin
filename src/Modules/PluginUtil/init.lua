@@ -28,6 +28,7 @@ return {
         activeToggle = Value(nil),
         deactivateFn = nil,
         onDeactivate = {},
+        onActivate = {},
         mouseDown = false,
         frame = nil,
     },
@@ -54,6 +55,13 @@ return {
         for _, f in pairs(self.data.onDeactivate) do
             f();
         end
+    end,
+
+    bindToActivate = function(self, fn)
+        table.insert(self.data.onActivate, fn);
+        if self.data.widget.Enabled then
+            fn();
+        end;
     end,
 
     bindToPluginInputBegan = function(self, fn)
@@ -100,15 +108,25 @@ return {
 
         toolbarButton:SetActive(widget.Enabled);
 
-        widget:GetPropertyChangedSignal("Enabled"):Connect(function()
-            toolbarButton:SetActive(widget.Enabled);
-            self.data.currentUI:set(0)
-            if not widget.Enabled then
-                for _, f in pairs(self.data.closeFunctions) do
-                    f();
-                end
-            end
-        end);
+        do
+            local function widgetEnabledUpdate()
+                toolbarButton:SetActive(widget.Enabled);
+                self.data.currentUI:set(0);
+                if not widget.Enabled then
+                    for _, f in pairs(self.data.closeFunctions) do
+                        f();
+                    end;
+                else
+                    for _, f in pairs(self.data.onActivate) do
+                        f();
+                    end;
+                end;
+            end;
+
+            widget:GetPropertyChangedSignal("Enabled"):Connect(widgetEnabledUpdate);
+
+            widgetEnabledUpdate();
+        end;
 
         widget.Title = self.CONFIG.widgetTitle;
 
@@ -242,7 +260,7 @@ return {
         end
     },
 
-    addSectionToWidget = function(self, SectionLayout: Types.SectionLayout, index: number)
+    addSectionToWidget = function(self, SectionLayout: Types.SectionLayout, index: number?)
 
         local children = {};
 
@@ -256,8 +274,19 @@ return {
             warn("No children for section " .. SectionLayout.Name .. ": not rendering")
         end
 
-        return require(script.Assets.section)(self, index, SectionLayout, children)
+        return require(script.Assets.section)(self, index or #self.data.frame:GetChildren(), SectionLayout, children)
 
+    end,
+
+    addElementToWidget = function(self, elemData: Types.Element, index: number?)
+
+        if script.Elements:FindFirstChild(elemData.Type) then
+            local f = require(script.Elements:FindFirstChild(elemData.Type))(self, index or #self.data.frame:GetChildren(), elemData)
+            f.Parent = self.data.frame
+            return f
+        else
+            warn("No element for type " .. elemData.Type .. ": not rendering")
+        end
     end
 
 }

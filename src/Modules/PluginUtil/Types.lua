@@ -15,6 +15,12 @@ export type ToggleButton = {
     Deactivate: () -> nil
 };
 
+export type Text = {
+    Type: "Text",
+    Text: string,
+    Tooltip: string?
+}
+
 export type Property<T> = {
     Key: string,
     DefaultValue: T,
@@ -48,9 +54,11 @@ export type Checklist = {
     OnChange: (value: {string}) -> nil
 };
 
+export type Element = Button | ToggleButton | Text | Property<boolean | number | Instance> | InstanceTree | Checklist;
+
 export type SectionLayout = {
     Name: string,
-    Contents: {[number]: Button | Property<boolean | number | Instance> | Checklist | InstanceTree}
+    Contents: {[number]: Element}
 };
 
 return nil;

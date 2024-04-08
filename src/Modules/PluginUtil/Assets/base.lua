@@ -38,7 +38,7 @@ return function(pluginUtil)
         [ Children ] = {
             New "UIListLayout" {
                 FillDirection = Enum.FillDirection.Vertical,
-                SortOrder = Enum.SortOrder.Name,
+                SortOrder = Enum.SortOrder.LayoutOrder,
                 Padding = UDim.new(0, 8),
                 HorizontalAlignment = Enum.HorizontalAlignment.Center,
                 VerticalAlignment = Enum.VerticalAlignment.Top

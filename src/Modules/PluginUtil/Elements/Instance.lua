@@ -67,26 +67,6 @@ return function(pluginUtil, i: number, elemData: Types.Property<Instance>)
     local startVal = elemData.DefaultValue;
     local cVal;
     if startVal and typeof(startVal) == "table" and startVal.get then
-        if not startVal:get() then
-            for _, p in pairs(elemData.Source:GetChildren()) do
-                if p:IsA(elemData.InstanceType) then
-                    startVal:set(p);
-                    break;
-                end;
-            end;
-            if not startVal:get() then
-                for _, p in pairs(elemData.Source:GetDescendants()) do
-                    if p:IsA(elemData.InstanceType) then
-                        startVal:set(p);
-                        break;
-                    end;
-                end;
-            end;
-            if not startVal:get() then
-                warn("No instances of type " .. elemData.InstanceType .. " found in " .. elemData.Source:GetFullName());
-                return;
-            end;
-        end
         cVal = startVal
     else
         cVal = Value(startVal);
