@@ -23,9 +23,6 @@ local Value = fusion.Value;
 
 -- Initialise plugin
 
-local activateEvent = Instance.new("BindableEvent", script.Parent);
-activateEvent.Name = "ActivatePlugin"
-
 pluginUtil:init(plugin:CreateToolbar(pluginUtil.CONFIG.toolbarName), plugin:CreateDockWidgetPluginGui(pluginUtil.CONFIG.pluginId, pluginUtil.CONFIG.widgetInfo))
 
 plugin.Deactivation:Connect(function()
