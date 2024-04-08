@@ -259,6 +259,8 @@ pluginUtil:addElementToWidget({
 			path = Path.new()
 			path.length = segmentLength:get()
 			path.canting = cantAngle:get()
+			local tracks = folder:GetChildren()
+			template:set(tracks[#tracks])
 			setTemplate()
 			ChangeHistoryService:SetWaypoint("Render Path")
 		end
