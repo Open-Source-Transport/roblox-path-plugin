@@ -2,10 +2,18 @@
   "name": "Path Plugin",
   "tree": {
     "$className": "DataModel",
-    "ServerScriptService": {
-      "$className": "ServerScriptService",
-      "$ignoreUnknownInstances": true,
-      "$path": "src/ServerScriptService"
+    "Workspace": {
+      "$className": "Workspace",
+      "Plugin": {
+        "$className": "Folder",
+        "$ignoreUnknownInstances": false,
+        "$path": "src",
+        "Packages": {
+          "$className": "Folder",
+          "$ignoreUnknownInstances": false,
+          "$path": "Packages"
+        }
+      }
     }
   }
 }

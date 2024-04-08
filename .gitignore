@@ -1,0 +1,20 @@
+# Project place file
+/*.rbxlx
+
+# Roblox Studio lock files
+/*.rbxlx.lock
+/*.rbxl.lock
+
+# Roblox Models
+/*.rbxm
+
+# Packages
+/Packages
+
+# Sourcemap
+/sourcemap.json
+
+# vscode
+/.vscode
+
+.DS_Store
