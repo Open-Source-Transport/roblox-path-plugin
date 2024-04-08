@@ -25,9 +25,9 @@
 --]]
 
 -- Modules
-local modules = script.Parent.Parent
-local Curve = require(modules.Classes.Curve)
-local ResizeAlign = require(modules.External.ResizeAlign)
+local modules = script.Parent
+local Curve = require(modules.Curve)
+local ResizeAlign = require(modules.ResizeAlign)
 
 -- Functions
 

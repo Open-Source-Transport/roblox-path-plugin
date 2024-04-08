@@ -14,7 +14,7 @@ local TOOLBAR_NAME = "anthony0br/roblox-path-plugin"
 
 -- Modules
 local modules = script.Parent.Modules
-local Path = require(modules.Classes.Path)
+local Path = require(modules.Path)
 local CreateAssets = require(modules.CreateAssets)
 
 -- Initialise plugin
