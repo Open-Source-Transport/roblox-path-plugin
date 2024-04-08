@@ -19,21 +19,25 @@ local CreateAssets = require(modules.CreateAssets)
 local pluginUtil = require(modules.PluginUtil)
 local fusion = require(packages.fusion)
 
-local Value = fusion.Value;
+local Value = fusion.Value
 
 -- Initialise plugin
 
-local activateEvent = Instance.new("BindableEvent", script.Parent);
+local activateEvent = Instance.new("BindableEvent")
+activateEvent.Parent = script.Parent
 activateEvent.Name = "ActivatePlugin"
 
-pluginUtil:init(plugin:CreateToolbar(pluginUtil.CONFIG.toolbarName), plugin:CreateDockWidgetPluginGui(pluginUtil.CONFIG.pluginId, pluginUtil.CONFIG.widgetInfo))
+pluginUtil:init(
+	plugin:CreateToolbar(pluginUtil.CONFIG.toolbarName),
+	plugin:CreateDockWidgetPluginGui(pluginUtil.CONFIG.pluginId, pluginUtil.CONFIG.widgetInfo)
+)
 
 plugin.Deactivation:Connect(function()
-    pluginUtil:deactivate();
+	pluginUtil:deactivate()
 end)
 
 plugin.Unloading:Connect(function()
-    pluginUtil:deactivate();
+	pluginUtil:deactivate()
 end)
 
 local assets = CreateAssets()
@@ -146,7 +150,7 @@ local function setTemplate()
 	ChangeHistoryService:SetWaypoint("Set template")
 	local newSelection = template:get()
 	if path and newSelection then
-		if (newSelection:IsA("BasePart") or newSelection:IsA("Model")) then
+		if newSelection:IsA("BasePart") or newSelection:IsA("Model") then
 			path.template = newSelection
 			if controlPoint then
 				controlPoint:Destroy()
@@ -158,7 +162,9 @@ local function setTemplate()
 
 			-- Reset when deleted
 			controlPoint.AncestryChanged:Connect(function()
-				if not controlPoint then return end;
+				if not controlPoint then
+					return
+				end
 				if not controlPoint:IsDescendantOf(game) and path then
 					controlPoint = nil
 					template:set(nil)
@@ -212,7 +218,7 @@ pluginUtil:addElementToWidget({
 	EmptyText = "No Track Selected",
 	OnChange = function()
 		setTemplate()
-	end
+	end,
 })
 
 pluginUtil:addSectionToWidget({
@@ -228,7 +234,7 @@ pluginUtil:addSectionToWidget({
 			OnChange = function(value)
 				path.length = value
 				pathChanged = true
-			end
+			end,
 		},
 		{
 			Type = "Slider",
@@ -240,13 +246,13 @@ pluginUtil:addSectionToWidget({
 			OnChange = function(value)
 				path.canting = value
 				pathChanged = true
-			end
+			end,
 		},
 		{
 			Type = "Text",
 			Text = gradeVal,
-		}
-	}
+		},
+	},
 })
 
 pluginUtil:addElementToWidget({
@@ -265,5 +271,5 @@ pluginUtil:addElementToWidget({
 			setTemplate()
 			ChangeHistoryService:SetWaypoint("Render Path")
 		end
-	end
+	end,
 })
