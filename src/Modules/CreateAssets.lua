@@ -29,11 +29,8 @@ return function(): Folder
 
 	local Number = Instance.new("TextLabel")
 	Number.Name = "Number"
-	Number.FontFace = Font.new(
-		"rbxasset://fonts/families/GothamSSm.json",
-		Enum.FontWeight.Medium,
-		Enum.FontStyle.Normal
-	)
+	Number.FontFace =
+		Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal)
 	Number.Text = "Control Point"
 	Number.TextColor3 = Color3.fromRGB(240, 240, 240)
 	Number.TextScaled = true
@@ -78,11 +75,8 @@ return function(): Folder
 
 	local CreateButton = Instance.new("TextButton")
 	CreateButton.Name = "CreateButton"
-	CreateButton.FontFace = Font.new(
-		"rbxasset://fonts/families/GothamSSm.json",
-		Enum.FontWeight.Bold,
-		Enum.FontStyle.Normal
-	)
+	CreateButton.FontFace =
+		Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
 	CreateButton.Text = "Render"
 	CreateButton.TextColor3 = Color3.fromRGB(248, 248, 248)
 	CreateButton.TextSize = 14
@@ -104,11 +98,8 @@ return function(): Folder
 
 	local TextLabel = Instance.new("TextLabel")
 	TextLabel.Name = "TextLabel"
-	TextLabel.FontFace = Font.new(
-		"rbxasset://fonts/families/GothamSSm.json",
-		Enum.FontWeight.Medium,
-		Enum.FontStyle.Normal
-	)
+	TextLabel.FontFace =
+		Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal)
 	TextLabel.Text = "Segment Length"
 	TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 	TextLabel.TextSize = 14
@@ -122,11 +113,8 @@ return function(): Folder
 
 	local TextBox = Instance.new("TextBox")
 	TextBox.Name = "TextBox"
-	TextBox.FontFace = Font.new(
-		"rbxasset://fonts/families/GothamSSm.json",
-		Enum.FontWeight.Medium,
-		Enum.FontStyle.Normal
-	)
+	TextBox.FontFace =
+		Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal)
 	TextBox.Text = "20"
 	TextBox.TextColor3 = Color3.fromRGB(248, 248, 248)
 	TextBox.TextSize = 14
@@ -138,11 +126,8 @@ return function(): Folder
 
 	local TextLabel1 = Instance.new("TextLabel")
 	TextLabel1.Name = "TextLabel"
-	TextLabel1.FontFace = Font.new(
-		"rbxasset://fonts/families/GothamSSm.json",
-		Enum.FontWeight.Medium,
-		Enum.FontStyle.Normal
-	)
+	TextLabel1.FontFace =
+		Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal)
 	TextLabel1.Text = "studs"
 	TextLabel1.TextColor3 = Color3.fromRGB(255, 255, 255)
 	TextLabel1.TextSize = 14
@@ -172,11 +157,8 @@ return function(): Folder
 
 	local TextLabel2 = Instance.new("TextLabel")
 	TextLabel2.Name = "TextLabel"
-	TextLabel2.FontFace = Font.new(
-		"rbxasset://fonts/families/GothamSSm.json",
-		Enum.FontWeight.Bold,
-		Enum.FontStyle.Normal
-	)
+	TextLabel2.FontFace =
+		Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
 	TextLabel2.Text = "Settings"
 	TextLabel2.TextColor3 = Color3.fromRGB(248, 248, 248)
 	TextLabel2.TextSize = 16
@@ -193,11 +175,8 @@ return function(): Folder
 
 	local SetTemplateButton = Instance.new("TextButton")
 	SetTemplateButton.Name = "SetTemplateButton"
-	SetTemplateButton.FontFace = Font.new(
-		"rbxasset://fonts/families/GothamSSm.json",
-		Enum.FontWeight.Bold,
-		Enum.FontStyle.Normal
-	)
+	SetTemplateButton.FontFace =
+		Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
 	SetTemplateButton.Text = "Select Track"
 	SetTemplateButton.TextColor3 = Color3.fromRGB(248, 248, 248)
 	SetTemplateButton.TextSize = 14
@@ -219,11 +198,8 @@ return function(): Folder
 
 	local TextLabel3 = Instance.new("TextLabel")
 	TextLabel3.Name = "TextLabel"
-	TextLabel3.FontFace = Font.new(
-		"rbxasset://fonts/families/GothamSSm.json",
-		Enum.FontWeight.Medium,
-		Enum.FontStyle.Normal
-	)
+	TextLabel3.FontFace =
+		Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal)
 	TextLabel3.Text = "Canting Angle"
 	TextLabel3.TextColor3 = Color3.fromRGB(255, 255, 255)
 	TextLabel3.TextSize = 14
@@ -237,11 +213,8 @@ return function(): Folder
 
 	local TextBox1 = Instance.new("TextBox")
 	TextBox1.Name = "TextBox"
-	TextBox1.FontFace = Font.new(
-		"rbxasset://fonts/families/GothamSSm.json",
-		Enum.FontWeight.Medium,
-		Enum.FontStyle.Normal
-	)
+	TextBox1.FontFace =
+		Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Medium, Enum.FontStyle.Normal)
 	TextBox1.Text = "0"
 	TextBox1.TextColor3 = Color3.fromRGB(248, 248, 248)
 	TextBox1.TextSize = 14
@@ -253,11 +226,8 @@ return function(): Folder
 
 	local TextLabel4 = Instance.new("TextLabel")
 	TextLabel4.Name = "TextLabel"
-	TextLabel4.FontFace = Font.new(
-		"rbxasset://fonts/families/GothamSSm.json",
-		Enum.FontWeight.Bold,
-		Enum.FontStyle.Normal
-	)
+	TextLabel4.FontFace =
+		Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
 	TextLabel4.Text = [[°
 	]]
 	TextLabel4.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -273,11 +243,8 @@ return function(): Folder
 
 	local Gradient = Instance.new("TextLabel")
 	Gradient.Name = "Gradient"
-	Gradient.FontFace = Font.new(
-		"rbxasset://fonts/families/GothamSSm.json",
-		Enum.FontWeight.Bold,
-		Enum.FontStyle.Normal
-	)
+	Gradient.FontFace =
+		Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
 	Gradient.Text = "Flat"
 	Gradient.TextColor3 = Color3.fromRGB(248, 248, 248)
 	Gradient.TextSize = 16
@@ -293,6 +260,6 @@ return function(): Folder
 	Gradient.Parent = Gui1
 
 	Gui1.Parent = Assets
-	
+
 	return Assets
 end

@@ -8,7 +8,7 @@ local PluginGuiService = game:GetService("PluginGuiService")
 local Selection = game:GetService("Selection")
 
 -- Constants
-local PREVIEW_REFRESH_RATE = 1/15
+local PREVIEW_REFRESH_RATE = 1 / 15
 local MAX_GRADIENT = 2000
 local TOOLBAR_NAME = "anthony0br/roblox-path-plugin"
 
@@ -19,8 +19,8 @@ local CreateAssets = require(modules.CreateAssets)
 
 -- Initialise plugin
 local plugin = plugin -- fix intellisense
-local pluginGui = PluginGuiService:FindFirstChild("anthony0br/roblox-path-plugin") or
-	plugin:CreateDockWidgetPluginGui(
+local pluginGui = PluginGuiService:FindFirstChild("anthony0br/roblox-path-plugin")
+	or plugin:CreateDockWidgetPluginGui(
 		"anthony0br/roblox-path-plugin",
 		DockWidgetPluginGuiInfo.new(Enum.InitialDockState.Float, false, false, 260, 280, 260, 280)
 	)
@@ -41,8 +41,8 @@ local path
 local function getTemplateCf()
 	local templateLength = path.template:IsA("BasePart") and path.template.Size.Z or path.template:GetExtentsSize().Z
 	local toEdge = CFrame.new(0, 0, -0.5 * templateLength)
-	return path.template and (path.template:IsA("BasePart") and path.template.CFrame * toEdge 
-		or path.template:GetBoundingBox() * toEdge)
+	return path.template
+		and (path.template:IsA("BasePart") and path.template.CFrame * toEdge or path.template:GetBoundingBox() * toEdge)
 end
 
 local function getGradientValue(curve)
@@ -57,17 +57,19 @@ local function getGradientValue(curve)
 		end
 	end
 	local startSegment, endSegment = curve[1], curve[#curve]
-	if (startSegment:IsA("Model") or startSegment:IsA("BasePart")) 
-	and (endSegment:IsA("Model") or endSegment:IsA("BasePart")) then
+	if
+		(startSegment:IsA("Model") or startSegment:IsA("BasePart"))
+		and (endSegment:IsA("Model") or endSegment:IsA("BasePart"))
+	then
 		local startCf, startSize
 		local endCf, endSize
-		
+
 		if startSegment:IsA("Model") then
 			startCf, startSize = startSegment:GetBoundingBox()
 		else
 			startCf, startSize = startSegment.CFrame, startSegment.Size
 		end
-		
+
 		if endSegment:IsA("Model") then
 			endCf, endSize = endSegment:GetBoundingBox()
 		else
@@ -84,7 +86,7 @@ local function getGradientValue(curve)
 	end
 	return 0
 end
-	
+
 -- Previews the path given, call with no arguments to clear
 local function previewPath(path)
 	if workspace.CurrentCamera:FindFirstChild("TrackPreview") then
@@ -136,8 +138,8 @@ local function setTemplate(template)
 		controlPoint = assets.ControlPoint:Clone()
 		controlPoint.Parent = workspace.Camera
 		controlPoint.CFrame = getTemplateCf()
-		* (path.length and CFrame.new(0, 0, -path.length) or CFrame.new(0, 0, -10)) 
-		
+			* (path.length and CFrame.new(0, 0, -path.length) or CFrame.new(0, 0, -10))
+
 		-- Reset when deleted
 		controlPoint.AncestryChanged:Connect(function()
 			if not controlPoint:IsDescendantOf(game) and path then
@@ -146,12 +148,12 @@ local function setTemplate(template)
 				previewPath()
 			end
 		end)
-		
+
 		-- Tell plugin to update path on changed
 		controlPoint.Changed:Connect(function()
 			pathChanged = true
 		end)
-		
+
 		-- Preview path
 		previewPath(newSelection and path)
 	end
@@ -196,7 +198,7 @@ do
 			setTemplate(tracks[#tracks])
 		end
 	end)
-	
+
 	-- Update TextBoxes on FocusLost
 	gui.Length.TextBox.FocusLost:Connect(function()
 		path.length = gui.Length.TextBox.Text
@@ -206,7 +208,7 @@ do
 		path.canting = gui.Canting.TextBox.Text
 		previewPath(path)
 	end)
-	
+
 	-- Update template
 	gui.SetTemplateButton.MouseButton1Down:Connect(function()
 		setTemplate(Selection:Get()[1])

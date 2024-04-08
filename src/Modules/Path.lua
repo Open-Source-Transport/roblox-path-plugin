@@ -90,7 +90,7 @@ function Path.new()
 	local self = setmetatable({}, Path)
 	local curve = Curve.new()
 	local lastSegment
-	
+
 	-- :draw - draws the path in a modeland returns the model
 	function Path:draw(cf0, cf1, fillGaps)
 		-- Check if path is valid, if not pass error message
@@ -99,25 +99,25 @@ function Path.new()
 		end
 		self.canting = tonumber(self.canting)
 		self.length = tonumber(self.length)
-		
+
 		-- Create path model
 		local path = Instance.new("Folder")
 		path.Name = "Path"
 		path.Parent = self.template.Parent.Parent:IsDescendantOf(workspace) and self.template.Parent.Parent or workspace
-		
+
 		-- Convert two CFrames into 4 positions
 		local cf2 = cf1
 		local cf1 = cf1 * CFrame.new(0, 0, self.length)
 		local dist = (cf1.p - cf0.p).Magnitude
-	    local cosa = math.cos(math.acos(cf0.LookVector:Dot(cf1.LookVector))/2)  
-	    if math.abs((cf0.LookVector - cf1.LookVector).Magnitude) < .05 then
-	        cosa = 1
-	    end
-	    local d = dist/(2*cosa + 1)
-		curve:setControlPoints({cf0.p, cf0.p + cf0.LookVector*d, cf1.p - cf1.LookVector*d, cf1.p})
+		local cosa = math.cos(math.acos(cf0.LookVector:Dot(cf1.LookVector)) / 2)
+		if math.abs((cf0.LookVector - cf1.LookVector).Magnitude) < 0.05 then
+			cosa = 1
+		end
+		local d = dist / (2 * cosa + 1)
+		curve:setControlPoints({ cf0.p, cf0.p + cf0.LookVector * d, cf1.p - cf1.LookVector * d, cf1.p })
 		local points = curve:getPointsFromSegmentLength(self.length)
 		table.insert(points, cf2.p)
-		
+
 		-- Create segments
 		local lastSegment
 		local minRadius
@@ -136,11 +136,11 @@ function Path.new()
 				end
 			end
 			segment.Parent = path
-			
+
 			-- Calculate length
 			local P0, P1 = points[i], points[i + 1]
 			local length = (P0 - P1).Magnitude
-			
+
 			-- Scale parts and models separately
 			if segment:IsA("BasePart") then
 				segment.Size = Vector3.new(segment.Size.X, segment.Size.Y, length)
@@ -156,15 +156,15 @@ function Path.new()
 			elseif segment:IsA("Model") then
 				-- Move the model to the correct CFrame
 				moveModel(segment, CFrame.new(P0, P1) * CFrame.new(0, 0, -length / 2))
-				
+
 				-- Set length of segments
 				for i, v in pairs(copies) do
 					v.Size = Vector3.new(v.Size.X, v.Size.Y, length)
 				end
-				
+
 				local cf, length = segment:GetBoundingBox()
 				length = length.Z
-			
+
 				-- Calculate minimum radius
 				do
 					local cf0 = template:GetBoundingBox()
@@ -177,7 +177,7 @@ function Path.new()
 						minRadius = radius < minRadius and radius or minRadius
 					end
 				end
-				
+
 				-- Align all parts in the last segment
 				if i == maxIterations and fillGaps then
 					local point = workspace.CurrentCamera:FindFirstChild("ControlPoint")
@@ -185,20 +185,20 @@ function Path.new()
 					for i, v in pairs(segment:GetDescendants()) do
 						if v:IsA("BasePart") then
 							ResizeAlign.DoExtend(
-								{Object = v, Normal = Enum.NormalId.Front}, 
-								{Object = point, Normal = Enum.NormalId.Front}
+								{ Object = v, Normal = Enum.NormalId.Front },
+								{ Object = point, Normal = Enum.NormalId.Front }
 							)
 						end
 					end
 				end
 			end
-			
+
 			-- Prepare for next segment
 			lastSegment = segment
 		end
-		
+
 		local segments = path:GetChildren()
-		
+
 		-- Apply canting
 		if minRadius and self.canting ~= 0 then
 			for i, v in ipairs(segments) do
@@ -235,15 +235,15 @@ function Path.new()
 				end
 			end
 		end
-		
+
 		-- Fill gaps
 		if fillGaps then
 			for copyIndex, v in pairs(copiesTable) do
 				for i, v in pairs(v) do
 					if fillGaps then
 						ResizeAlign.DoExtend(
-							{Object = i, Normal = Enum.NormalId.Front}, 
-							{Object = v, Normal = Enum.NormalId.Back}
+							{ Object = i, Normal = Enum.NormalId.Front },
+							{ Object = v, Normal = Enum.NormalId.Back }
 						)
 					end
 				end
@@ -252,16 +252,16 @@ function Path.new()
 				local template = i > 1 and segments[i - 1] or self.template
 				if segment:IsA("BasePart") then
 					ResizeAlign.DoExtend(
-						{Object = template, Normal = Enum.NormalId.Front}, 
-						{Object = segment, Normal = Enum.NormalId.Back}
+						{ Object = template, Normal = Enum.NormalId.Front },
+						{ Object = segment, Normal = Enum.NormalId.Back }
 					)
 				end
 			end
 		end
-		
+
 		return path
 	end
-	
+
 	return self
 end
 

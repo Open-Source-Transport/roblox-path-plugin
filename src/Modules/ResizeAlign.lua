@@ -26,17 +26,17 @@ local function getFacePoints(face)
 	local hsize = face.Object.Size / 2
 	local faceDir = Vector3.FromNormalId(face.Normal)
 	local faceA, faceB = otherNormals(faceDir)
-	faceDir, faceA, faceB = faceDir*hsize, faceA*hsize, faceB*hsize
+	faceDir, faceA, faceB = faceDir * hsize, faceA * hsize, faceB * hsize
 	--
 	local function sp(offset)
 		return (face.Object.CFrame * CFrame.new(offset)).p
 	end
 	--
 	return {
-		sp(faceDir + faceA + faceB);
-		sp(faceDir + faceA - faceB);
-		sp(faceDir - faceA - faceB);
-		sp(faceDir - faceA + faceB);
+		sp(faceDir + faceA + faceB),
+		sp(faceDir + faceA - faceB),
+		sp(faceDir - faceA - faceB),
+		sp(faceDir - faceA + faceB),
 	}
 end
 
@@ -68,8 +68,8 @@ function cl0(n)
 end
 function RealDistanceFrom(point, part)
 	local p = part.CFrame:pointToObjectSpace(part.Position)
-	local hz = part.Size/2
-	local sep = Vector3.new(cl0(math.abs(p.x)-hz.x), cl0(math.abs(p.y)-hz.y), cl0(math.abs(p.z)-hz.z))
+	local hz = part.Size / 2
+	local sep = Vector3.new(cl0(math.abs(p.x) - hz.x), cl0(math.abs(p.y) - hz.y), cl0(math.abs(p.z) - hz.z))
 	return sep.magnitude
 end
 
@@ -139,12 +139,12 @@ end
 function resizePart(part, normal, delta)
 	local axis = Vector3.FromNormalId(normal)
 	local cf = part.CFrame
-	local targetSize = part.Size + Vector3.new(math.abs(axis.X), math.abs(axis.Y), math.abs(axis.Z))*delta
-	
+	local targetSize = part.Size + Vector3.new(math.abs(axis.X), math.abs(axis.Y), math.abs(axis.Z)) * delta
+
 	part:BreakJoints()
 	part.Size = targetSize
 	part:BreakJoints()
-	part.CFrame = cf * CFrame.new(axis * (delta/2))
+	part.CFrame = cf * CFrame.new(axis * (delta / 2))
 end
 
 function ResizeAlign.DoExtend(faceA, faceB)
@@ -152,18 +152,18 @@ function ResizeAlign.DoExtend(faceA, faceB)
 	local pointsA = getFacePoints(faceA)
 	local pointsB = getFacePoints(faceB)
 	--
-	local extendPointA, extendPointB;
-	if ResizeAlign.Mode == 'ExtendInto' or ResizeAlign.Mode == 'OuterTouch' or ResizeAlign.Mode == 'ButtJoint' then
+	local extendPointA, extendPointB
+	if ResizeAlign.Mode == "ExtendInto" or ResizeAlign.Mode == "OuterTouch" or ResizeAlign.Mode == "ButtJoint" then
 		extendPointA = getPositivePointToFace(faceB, pointsA)
 		extendPointB = getPositivePointToFace(faceA, pointsB)
-	elseif ResizeAlign.Mode == 'ExtendUpto' or ResizeAlign.Mode == 'InnerTouch' then
+	elseif ResizeAlign.Mode == "ExtendUpto" or ResizeAlign.Mode == "InnerTouch" then
 		extendPointA = getNegativePointToFace(faceB, pointsA)
 		extendPointB = getNegativePointToFace(faceA, pointsB)
-	elseif ResizeAlign.Mode == 'HalfTouch' then
-		extendPointA = (getPositivePointToFace(faceB, pointsA) + getNegativePointToFace(faceB, pointsA))/2
-		extendPointB = (getPositivePointToFace(faceA, pointsB) + getNegativePointToFace(faceA, pointsB))/2
+	elseif ResizeAlign.Mode == "HalfTouch" then
+		extendPointA = (getPositivePointToFace(faceB, pointsA) + getNegativePointToFace(faceB, pointsA)) / 2
+		extendPointB = (getPositivePointToFace(faceA, pointsB) + getNegativePointToFace(faceA, pointsB)) / 2
 	else
-		assert(false, "unreachable")		
+		assert(false, "unreachable")
 	end
 	local startSep = extendPointB - extendPointA
 	--
@@ -175,7 +175,7 @@ function ResizeAlign.DoExtend(faceA, faceB)
 	-- Find the closest distance between the rays (extendPointA, dirA) and (extendPointB, dirB):
 	-- See: http://geomalgorithms.com/a07-_distance.html#dist3D_Segment_to_Segment
 	local a, b, c, d, e = dirA:Dot(dirA), dirA:Dot(dirB), dirB:Dot(dirB), dirA:Dot(startSep), dirB:Dot(startSep)
-	local denom = a*c - b*b
+	local denom = a * c - b * b
 
 	-- Is this a degenerate case?
 	if math.abs(denom) < 0.001 then
@@ -193,22 +193,22 @@ function ResizeAlign.DoExtend(faceA, faceB)
 	end
 
 	-- Get the distances to extend by
-	local lenA = -(b*e - c*d) / denom
-	local lenB = -(a*e - b*d) / denom
+	local lenA = -(b * e - c * d) / denom
+	local lenB = -(a * e - b * d) / denom
 
-	if ResizeAlign.Mode == 'ExtendInto' or ResizeAlign.Mode == 'ExtendUpto' then
+	if ResizeAlign.Mode == "ExtendInto" or ResizeAlign.Mode == "ExtendUpto" then
 		-- We need to find a different lenA, which is the intersection of
 		-- extendPointA to the plane faceB:
 		-- dist to plane (point, normal) = - (ray_dir . normal) / ((ray_origin - point) . normal)
 		local denom2 = dirA:Dot(dirB)
 		if math.abs(denom2) > 0.0001 then
-			lenA = - (extendPointA - extendPointB):Dot(dirB) / denom2
+			lenA = -(extendPointA - extendPointB):Dot(dirB) / denom2
 			lenB = 0
 		else
 			-- Perpendicular
 			-- Project all points of faceB onto faceA and extend by that much
 			local points = getPoints(faceB.Object)
-			if ResizeAlign.Mode == 'ExtendUpto' then
+			if ResizeAlign.Mode == "ExtendUpto" then
 				local smallestLen = math.huge
 				for _, v in pairs(points) do
 					local dist = (v - extendPointA):Dot(getNormal(faceA))
@@ -217,7 +217,7 @@ function ResizeAlign.DoExtend(faceA, faceB)
 					end
 				end
 				lenA = smallestLen
-			elseif ResizeAlign.Mode == 'ExtendInto' then
+			elseif ResizeAlign.Mode == "ExtendInto" then
 				local largestLen = -math.huge
 				for _, v in pairs(points) do
 					local dist = (v - extendPointA):Dot(getNormal(faceA))
@@ -247,18 +247,22 @@ function ResizeAlign.DoExtend(faceA, faceB)
 	resizePart(faceA.Object, faceA.Normal, lenA)
 	resizePart(faceB.Object, faceB.Normal, lenB)
 
-	-- For a butt joint, we want to resize back one of the parts by the thickness 
+	-- For a butt joint, we want to resize back one of the parts by the thickness
 	-- of the other part on that axis. Renize the first part (A), such that it
 	-- "butts up against" the second part (B).
-	if ResizeAlign.Mode == 'ButtJoint' then
+	if ResizeAlign.Mode == "ButtJoint" then
 		-- Find the width of B on the axis A, which is the amount to resize by
 		local points = getPoints(faceB.Object)
-		local minV =  math.huge
+		local minV = math.huge
 		local maxV = -math.huge
 		for _, v in pairs(points) do
 			local proj = (v - extendPointA):Dot(dirA)
-			if proj < minV then minV = proj end
-			if proj > maxV then maxV = proj end
+			if proj < minV then
+				minV = proj
+			end
+			if proj > maxV then
+				maxV = proj
+			end
 		end
 		resizePart(faceA.Object, faceA.Normal, -(maxV - minV))
 	end
@@ -278,7 +282,7 @@ function GetTarget(part, ray)
 			break
 		end
 	until hit.Name == part.Name
-	local targetSurface;
+	local targetSurface
 	if hit then
 		local localDisp = hit.CFrame:vectorToObjectSpace(at - hit.Position)
 		local halfSize = hit.Size / 2
