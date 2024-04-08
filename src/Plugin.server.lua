@@ -23,14 +23,7 @@ local Value = fusion.Value
 
 -- Initialise plugin
 
-local activateEvent = Instance.new("BindableEvent")
-activateEvent.Parent = script.Parent
-activateEvent.Name = "ActivatePlugin"
-
-pluginUtil:init(
-	plugin:CreateToolbar(pluginUtil.CONFIG.toolbarName),
-	plugin:CreateDockWidgetPluginGui(pluginUtil.CONFIG.pluginId, pluginUtil.CONFIG.widgetInfo)
-)
+pluginUtil:init(plugin:CreateToolbar(pluginUtil.CONFIG.toolbarName), plugin:CreateDockWidgetPluginGui(pluginUtil.CONFIG.pluginId, pluginUtil.CONFIG.widgetInfo))
 
 plugin.Deactivation:Connect(function()
 	pluginUtil:deactivate()
@@ -268,6 +261,8 @@ pluginUtil:addElementToWidget({
 			path = Path.new()
 			path.length = segmentLength:get()
 			path.canting = cantAngle:get()
+			local tracks = folder:GetChildren()
+			template:set(tracks[#tracks])
 			setTemplate()
 			ChangeHistoryService:SetWaypoint("Render Path")
 		end
