@@ -10,6 +10,7 @@ local Selection = game:GetService("Selection")
 -- Constants
 local PREVIEW_REFRESH_RATE = 1/15
 local MAX_GRADIENT = 2000
+local TOOLBAR_NAME = "anthony0br/roblox-path-plugin"
 
 -- Modules
 local modules = script.Parent.Modules
@@ -18,13 +19,13 @@ local CreateAssets = require(modules.CreateAssets)
 
 -- Initialise plugin
 local plugin = plugin -- fix intellisense
-local pluginGui = PluginGuiService:FindFirstChild("ElectrifiedTrackPlacer") or
+local pluginGui = PluginGuiService:FindFirstChild("anthony0br/roblox-path-plugin") or
 	plugin:CreateDockWidgetPluginGui(
-		"Path Creator",
+		"anthony0br/roblox-path-plugin",
 		DockWidgetPluginGuiInfo.new(Enum.InitialDockState.Float, false, false, 260, 280, 260, 280)
 	)
-pluginGui.Title = "Path Creator"
-pluginGui.Name = "Path Creator"
+pluginGui.Title = "anthony0br/roblox-path-plugin"
+pluginGui.Name = "anthony0br/roblox-path-plugin"
 local assets = CreateAssets()
 assets.Parent = script.Parent
 if not pluginGui:FindFirstChild("Gui") then
@@ -157,7 +158,7 @@ local function setTemplate(template)
 end
 
 -- Create toolbar button and open PluginGui on click
-plugin:CreateToolbar("Electrified"):CreateButton("Track Placer", "Lay some track", "").Click:Connect(function()
+plugin:CreateToolbar(TOOLBAR_NAME):CreateButton("Track Placer", "Lay some track", "").Click:Connect(function()
 	pluginGui.Enabled = true
 	path = Path.new()
 	path.length = gui.Length.TextBox.Text
