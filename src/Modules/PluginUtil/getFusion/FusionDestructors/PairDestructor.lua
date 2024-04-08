@@ -1,0 +1,5 @@
+return function(k0, v0, m)
+	if typeof(v0) == "Instance" then
+		v0:Destroy()
+	end
+end

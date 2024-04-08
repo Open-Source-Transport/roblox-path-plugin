@@ -4,7 +4,6 @@
 
 -- Services
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
-local PluginGuiService = game:GetService("PluginGuiService")
 local Selection = game:GetService("Selection")
 
 -- Constants
@@ -14,27 +13,43 @@ local TOOLBAR_NAME = "anthony0br/roblox-path-plugin"
 
 -- Modules
 local modules = script.Parent.Modules
+local packages = script.Parent.Packages
 local Path = require(modules.Path)
 local CreateAssets = require(modules.CreateAssets)
+local pluginUtil = require(modules.PluginUtil)
+local fusion = require(packages.fusion)
+
+local Value = fusion.Value
 
 -- Initialise plugin
-local plugin = plugin -- fix intellisense
-local pluginGui = PluginGuiService:FindFirstChild("anthony0br/roblox-path-plugin")
-	or plugin:CreateDockWidgetPluginGui(
-		"anthony0br/roblox-path-plugin",
-		DockWidgetPluginGuiInfo.new(Enum.InitialDockState.Float, false, false, 260, 280, 260, 280)
-	)
-pluginGui.Title = "anthony0br/roblox-path-plugin"
-pluginGui.Name = "anthony0br/roblox-path-plugin"
+
+local activateEvent = Instance.new("BindableEvent")
+activateEvent.Parent = script.Parent
+activateEvent.Name = "ActivatePlugin"
+
+pluginUtil:init(
+	plugin:CreateToolbar(pluginUtil.CONFIG.toolbarName),
+	plugin:CreateDockWidgetPluginGui(pluginUtil.CONFIG.pluginId, pluginUtil.CONFIG.widgetInfo)
+)
+
+plugin.Deactivation:Connect(function()
+	pluginUtil:deactivate()
+end)
+
+plugin.Unloading:Connect(function()
+	pluginUtil:deactivate()
+end)
+
 local assets = CreateAssets()
-assets.Parent = script.Parent
-if not pluginGui:FindFirstChild("Gui") then
-	assets.Gui:Clone().Parent = pluginGui
-end
-local gui = pluginGui.Gui
+
 local pathChanged
 local controlPoint
 local path
+
+local gradeVal = Value("Flat")
+local segmentLength = Value(20)
+local cantAngle = Value(0)
+local template = Value()
 
 -- Functions
 
@@ -89,8 +104,8 @@ end
 
 -- Previews the path given, call with no arguments to clear
 local function previewPath(path)
-	if workspace.CurrentCamera:FindFirstChild("TrackPreview") then
-		workspace.CurrentCamera.TrackPreview:Destroy()
+	if workspace.CurrentCamera:FindFirstChild("PathPreview") then
+		workspace.CurrentCamera.PathPreview:Destroy()
 	end
 	if path and path.template and controlPoint then
 		local preview = path:draw(getTemplateCf(), controlPoint.CFrame)
@@ -102,7 +117,7 @@ local function previewPath(path)
 		else
 			grade = "Decline: 1 in " .. tostring(-grade)
 		end
-		gui.Gradient.Text = grade
+		gradeVal:set(grade)
 		if preview then
 			for i, v in pairs(preview:GetDescendants()) do
 				if v:IsA("BasePart") or v:IsA("Decal") then
@@ -112,59 +127,71 @@ local function previewPath(path)
 					end
 				end
 			end
-			preview.Name = "TrackPreview"
+			preview.Name = "PathPreview"
 			preview.Parent = workspace.CurrentCamera
 		end
+	else
+		gradeVal:set("")
 	end
 end
 
 -- Resets the plugin
 local function resetPlugin()
-	if controlPoint then
-		controlPoint:Destroy()
-	end
-	gui.Gradient.Text = "Flat"
-end
-
-local function setTemplate(template)
-	ChangeHistoryService:SetWaypoint("Set template")
-	local newSelection = template
-	if path and not newSelection or newSelection:IsA("BasePart") or newSelection:IsA("Model") then
-		gui.CurrentSelection.Text = newSelection and "Selected: " .. newSelection.Name or "Selected: None"
-		path.template = newSelection
-		if controlPoint then
-			controlPoint:Destroy()
+	for _, c in pairs(workspace.CurrentCamera:GetChildren()) do
+		if c.Name == "PathPreview" or c.Name == "ControlPoint" then
+			c:Destroy()
 		end
-		controlPoint = assets.ControlPoint:Clone()
-		controlPoint.Parent = workspace.Camera
-		controlPoint.CFrame = getTemplateCf()
-			* (path.length and CFrame.new(0, 0, -path.length) or CFrame.new(0, 0, -10))
+	end
+	controlPoint = nil
+	gradeVal:set("")
+end
 
-		-- Reset when deleted
-		controlPoint.AncestryChanged:Connect(function()
-			if not controlPoint:IsDescendantOf(game) and path then
-				controlPoint = nil
-				gui.CurrentSelection.Text = "Selected: None"
-				previewPath()
+local function setTemplate()
+	ChangeHistoryService:SetWaypoint("Set template")
+	local newSelection = template:get()
+	if path and newSelection then
+		if newSelection:IsA("BasePart") or newSelection:IsA("Model") then
+			path.template = newSelection
+			if controlPoint then
+				controlPoint:Destroy()
 			end
-		end)
+			controlPoint = assets.ControlPoint:Clone()
+			controlPoint.Parent = workspace.Camera
+			controlPoint.CFrame = getTemplateCf()
+				* (path.length and CFrame.new(0, 0, -path.length) or CFrame.new(0, 0, -10))
 
-		-- Tell plugin to update path on changed
-		controlPoint.Changed:Connect(function()
-			pathChanged = true
-		end)
+			-- Reset when deleted
+			controlPoint.AncestryChanged:Connect(function()
+				if not controlPoint then
+					return
+				end
+				if not controlPoint:IsDescendantOf(game) and path then
+					controlPoint = nil
+					template:set(nil)
+					previewPath()
+				end
+			end)
 
-		-- Preview path
-		previewPath(newSelection and path)
+			-- Tell plugin to update path on changed
+			controlPoint.Changed:Connect(function()
+				pathChanged = true
+			end)
+
+			-- Preview path
+			previewPath(newSelection and path)
+		else
+			template:set(nil)
+		end
 	end
 end
 
--- Create toolbar button and open PluginGui on click
-plugin:CreateToolbar(TOOLBAR_NAME):CreateButton("Track Placer", "Lay some track", "").Click:Connect(function()
-	pluginGui.Enabled = true
+--Plugin activation / deactivation
+
+pluginUtil:bindToActivate(function()
 	path = Path.new()
-	path.length = gui.Length.TextBox.Text
-	path.canting = gui.Canting.TextBox.Text
+	path.length = segmentLength:get()
+	path.canting = cantAngle:get()
+
 	spawn(function()
 		while path do
 			if pathChanged then
@@ -175,42 +202,74 @@ plugin:CreateToolbar(TOOLBAR_NAME):CreateButton("Track Placer", "Lay some track"
 		end
 	end)
 end)
+
 -- Cleanup before PluginGui closed
-pluginGui:BindToClose(function()
-	pluginGui.Enabled = false
+pluginUtil:bindFnToClose(function()
 	resetPlugin()
 end)
 
--- Gui events
-do
-	-- CreateButton clicked
-	gui.CreateButton.MouseButton1Down:Connect(function()
+-- Gui
+
+pluginUtil:addElementToWidget({
+	Type = "Instance",
+	Key = "Track",
+	DefaultValue = template,
+	SelectingText = "Select Track Model",
+	EmptyText = "No Track Selected",
+	OnChange = function()
+		setTemplate()
+	end,
+})
+
+pluginUtil:addSectionToWidget({
+	Name = "Settings",
+	Contents = {
+		{
+			Type = "Slider",
+			Key = "Segment Length",
+			Minimum = 1,
+			Maximum = 100,
+			DefaultValue = 20,
+			Unit = "Studs",
+			OnChange = function(value)
+				path.length = value
+				pathChanged = true
+			end,
+		},
+		{
+			Type = "Slider",
+			Key = "Bank Angle",
+			Minimum = 0,
+			Maximum = 20,
+			DefaultValue = 0,
+			Unit = "Degrees",
+			OnChange = function(value)
+				path.canting = value
+				pathChanged = true
+			end,
+		},
+		{
+			Type = "Text",
+			Text = gradeVal,
+		},
+	},
+})
+
+pluginUtil:addElementToWidget({
+	Type = "Button",
+	Text = "Render Path",
+	OnClick = function()
 		if controlPoint and path.template then
-			ChangeHistoryService:SetWaypoint("Create track")
+			ChangeHistoryService:SetWaypoint("Render Path")
 			previewPath()
 			local folder = path:draw(getTemplateCf(), controlPoint.CFrame, true)
 			path.template = nil
 			resetPlugin()
 			path = Path.new()
-			path.length = gui.Length.TextBox.Text
-			path.canting = gui.Canting.TextBox.Text
-			local tracks = folder:GetChildren()
-			setTemplate(tracks[#tracks])
+			path.length = segmentLength:get()
+			path.canting = cantAngle:get()
+			setTemplate()
+			ChangeHistoryService:SetWaypoint("Render Path")
 		end
-	end)
-
-	-- Update TextBoxes on FocusLost
-	gui.Length.TextBox.FocusLost:Connect(function()
-		path.length = gui.Length.TextBox.Text
-		previewPath(path)
-	end)
-	gui.Canting.TextBox.FocusLost:Connect(function()
-		path.canting = gui.Canting.TextBox.Text
-		previewPath(path)
-	end)
-
-	-- Update template
-	gui.SetTemplateButton.MouseButton1Down:Connect(function()
-		setTemplate(Selection:Get()[1])
-	end)
-end
+	end,
+})
