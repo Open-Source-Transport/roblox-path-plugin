@@ -17,6 +17,8 @@ The open source feature-rich Roblox Studio plugin for a variety of path-creating
 
 - Axis selection
 
+- Banking (also known as superelevation or canting)
+
 - Fast previews with automatic refresh rate scaling
 
 - Connecting to existing paths, even ones not made by this plugin
