@@ -4,7 +4,6 @@
 
 -- Services
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
-local RunService = game:GetService("RunService")
 local Selection = game:GetService("Selection")
 local UserInputService = game:GetService("UserInputService")
 local PhysicsService = game:GetService("PhysicsService")
@@ -48,6 +47,8 @@ local segmentLength = Value(20)
 local cantAngle = Value(0)
 local template = Value()
 local endpoint = Value()
+local reversePath = Value(false)
+local primaryAxis = "Z"
 local optimiseStraights = true
 local templateConnection: RBXScriptConnection?
 local endpointConnection: RBXScriptConnection?
@@ -55,10 +56,16 @@ local endpointConnection: RBXScriptConnection?
 -- Functions
 
 local function getTemplateCf()
-	local templateLength = path.template:IsA("BasePart") and path.template.Size.Z or path.template:GetExtentsSize().Z
-	local toEdge = CFrame.new(0, 0, -0.5 * templateLength)
+	local templateLength = path.template:IsA("BasePart") and path.template.Size[primaryAxis] or path.template:GetExtentsSize()[primaryAxis]
+	local scalar = templateLength * (reversePath:get() and -1 or 1)
+	local toEdge: CFrame
+	if primaryAxis == "X" then
+		toEdge = CFrame.new(Vector3.new(0.5 * scalar, 0, 0), Vector3.new(scalar * 2, 0, 0))
+	else
+		toEdge = CFrame.new(Vector3.new(0, 0, 0.5 * scalar), Vector3.new(0, 0, scalar * 2))
+	end
 	return path.template
-		and (path.template:IsA("BasePart") and path.template.CFrame * toEdge or path.template:GetBoundingBox() * toEdge)
+		and (path.template:GetPivot():ToWorldSpace(toEdge))
 end
 
 local function getGradientValue(curve)
@@ -147,7 +154,7 @@ local function resetPlugin()
 	end
 	controlPoint = nil
 	gradeVal:set("")
-
+	
 	if templateConnection then
 		templateConnection:Disconnect()
 		templateConnection = nil
@@ -166,7 +173,7 @@ local function setEndpoint(value: (BasePart | Model)?, sign: number?)
 		endpointConnection:Disconnect()
 		endpointConnection = nil
 	end
-	if not (value and controlPoint) then
+	if (not (value and controlPoint)) or (value == controlPoint) then
 		endpoint:set()
 		return
 	end
@@ -281,7 +288,6 @@ local function setTemplate()
 					isDraggingControlPoint = false
 					if not controlPoint:IsDescendantOf(game) and path then
 						controlPoint = nil
-						template:set(nil)
 						previewPath()
 					end
 				end)
@@ -331,61 +337,74 @@ do
 		path = Path.new()
 		path.length = segmentLength:get()
 		path.canting = cantAngle:get()
+		path.primaryAxis = primaryAxis
 		path.optimiseStraights = optimiseStraights
-		RunService:BindToRenderStep("PathPlugin", Enum.RenderPriority.Camera.Value, function(_step)
-			local s = tick()
+		path.swapEnd = reversePath:get()
+	end)
 
-			if tick() - lastUpdate < previewRefreshDelta then
-				return
+	pluginUtil:bindToRenderStep(function(step: number)
+		local s = tick()
+
+		if tick() - lastUpdate < previewRefreshDelta then
+			return
+		end
+
+		lastUpdate = s
+
+		if template:get() and not template:get().Parent then
+			template:set()
+			setTemplate()
+			resetPlugin()
+		end
+
+		if isDraggingControlPoint and controlPoint then --override default studio dragger to avoid any collisions with preview
+			local ray = workspace.CurrentCamera:ScreenPointToRay(
+				UserInputService:GetMouseLocation().X,
+				UserInputService:GetMouseLocation().Y
+			)
+			local result = workspace:Raycast(ray.Origin, ray.Direction * 500, dragRayParams)
+			if result then
+				controlPoint.CFrame = controlPoint.CFrame
+					+ result.Position
+					- controlPoint.Position
+					+ controlPoint.Size * result.Normal / 2
 			end
+			pathChanged = true
+		end
 
-			lastUpdate = s
+		if path and pathChanged then
+			previewPath(path)
+			pathChanged = false
+		end
 
-			if isDraggingControlPoint and controlPoint then --override default studio dragger to avoid any collisions with preview
-				local ray = workspace.CurrentCamera:ScreenPointToRay(
-					UserInputService:GetMouseLocation().X,
-					UserInputService:GetMouseLocation().Y
-				)
-				local result = workspace:Raycast(ray.Origin, ray.Direction * 500, dragRayParams)
-				if result then
-					controlPoint.CFrame = controlPoint.CFrame
-						+ result.Position
-						- controlPoint.Position
-						+ controlPoint.Size * result.Normal / 2
-				end
-				pathChanged = true
-			end
+		local delta = tick() - s
 
-			if path and pathChanged then
-				previewPath(path)
-				pathChanged = false
-			end
-
-			local delta = tick() - s
-
-			if delta * 4 > MIN_STEP then --Taking too long to run - decrease refresh rate
-				previewRefreshDelta = delta * 8
-			else
-				previewRefreshDelta = 0
-			end
-		end)
+		if delta * 4 > MIN_STEP then --Taking too long to run - decrease refresh rate
+			previewRefreshDelta = delta * 8
+		else
+			previewRefreshDelta = 0
+		end
 	end)
 
 	-- Cleanup on close
 	pluginUtil:bindFnToClose(function()
 		resetPlugin()
+		template:set()
+		setTemplate()
 	end)
 
 	plugin.Deactivation:Connect(function()
 		pluginUtil:deactivate()
+		template:set()
+		setTemplate()
 		resetPlugin()
-		RunService:UnbindFromRenderStep("PathPlugin")
 	end)
 
 	plugin.Unloading:Connect(function()
 		pluginUtil:deactivate()
+		template:set()
+		setTemplate()
 		resetPlugin()
-		RunService:UnbindFromRenderStep("PathPlugin")
 	end)
 end
 
@@ -444,7 +463,37 @@ pluginUtil:addSectionToWidget({
 		},
 		{
 			Type = "Boolean",
-			Key = "Optimise straights",
+			Key = "Swap End",
+			DefaultValue = reversePath,
+			OnChange = function(value)
+				pathChanged = true
+				path.swapEnd = value
+				if endpoint:get() then
+					setEndpoint(endpoint:get())
+					return
+				end;
+				controlPoint.CFrame = getTemplateCf():ToWorldSpace((path.length and CFrame.new(0, 0, -path.length) or CFrame.new(0, 0, -10)))
+			end,
+		},
+		{
+			Type = "Boolean",
+			Key = "Use X Axis",
+			DefaultValue = false,
+			OnChange = function(value)
+				pathChanged = true
+
+				primaryAxis = value and "X" or "Z"
+				path.primaryAxis = primaryAxis
+				if endpoint:get() then
+					setEndpoint(endpoint:get())
+					return
+				end;
+				controlPoint.CFrame = getTemplateCf():ToWorldSpace((path.length and CFrame.new(0, 0, -path.length) or CFrame.new(0, 0, -10)))
+			end,
+		},
+		{
+			Type = "Boolean",
+			Key = "Optimise Straights",
 			DefaultValue = optimiseStraights,
 			OnChange = function(value)
 				optimiseStraights = value
@@ -455,8 +504,18 @@ pluginUtil:addSectionToWidget({
 		{
 			Type = "Text",
 			Text = gradeVal,
-		},
+		}
 	},
+})
+
+pluginUtil:addElementToWidget({
+	Type = "Button",
+	Text = "Select Control Point",
+	OnClick = function()
+		if controlPoint then
+			Selection:Set({controlPoint})
+		end
+	end,
 })
 
 pluginUtil:addElementToWidget({
@@ -468,13 +527,15 @@ pluginUtil:addElementToWidget({
 			ChangeHistoryService:SetWaypoint("Render Path")
 			previewPath()
 			local folder = path:draw(getTemplateCf(), controlPoint.CFrame, true)
-			path.template = nil
 			local prevEndpoint = endpoint:get()
+			local hadSelectedControlPoint = game.Selection:Get()[1] == controlPoint
 			resetPlugin()
 			path = Path.new()
 			path.length = segmentLength:get()
 			path.canting = cantAngle:get()
 			path.optimiseStraights = optimiseStraights
+			path.primaryAxis = primaryAxis
+			path.swapEnd = reversePath:get()
 			if prevEndpoint then
 				template:set(prevEndpoint)
 			else
@@ -484,6 +545,9 @@ pluginUtil:addElementToWidget({
 			setEndpoint()
 			isUpdatingControlPoint = false
 			setTemplate()
+			if hadSelectedControlPoint and controlPoint then
+				Selection:Set({controlPoint})
+			end
 			ChangeHistoryService:SetWaypoint("Render Path")
 		end
 	end,

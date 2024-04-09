@@ -34,7 +34,7 @@ return {
 		for _, f in pairs(self.data.closeFunctions) do
 			f()
 		end
-		RUS:UnbindFromRenderStep("TrackPluginRSUpdates")
+		RUS:UnbindFromRenderStep(self.CONFIG.pluginId .. "RSUpdates")
 		--[[for _, c in pairs(game.CoreGui:GetChildren()) do
             if c.Name == "TrackPlugin" then
                 c:Destroy()
@@ -50,11 +50,12 @@ return {
 		for _, f in pairs(self.data.onDeactivate) do
 			f()
 		end
+		RUS:UnbindFromRenderStep(self.CONFIG.pluginId .. "RSUpdates")
 	end,
 
 	bindToActivate = function(self, fn)
 		table.insert(self.data.onActivate, fn)
-		if self.data.widget.Enabled then
+		if self.data.widget and self.data.widget.Enabled then
 			fn()
 		end
 	end,
@@ -79,14 +80,17 @@ return {
 
 	init = function(self, toolbar, widget)
 		self:cleanup()
-		RUS:BindToRenderStep("TrackPluginRSUpdates", 151, function(step)
-			for i = #self.data.RSFunctions, 1, -1 do
-				local s, e = pcall(self.data.RSFunctions[i], step)
-				if not s then
-					warn("Error executing RenderStepped update: " .. e)
-					table.remove(self.data.RSFunctions, i)
+		
+		self:bindToActivate(function()
+			RUS:BindToRenderStep(self.CONFIG.pluginId .. "RSUpdates", 151, function(step)
+				for i = #self.data.RSFunctions, 1, -1 do
+					local s, e = pcall(self.data.RSFunctions[i], step)
+					if not s then
+						warn("[PluginUtil] Error executing RenderStepped update: " .. e)
+						table.remove(self.data.RSFunctions, i)
+					end
 				end
-			end
+			end)
 		end)
 
 		self.data.toolbar = toolbar
@@ -145,7 +149,7 @@ return {
 				UDim2.new(1, 0, 1, -(30 + self.instanceTree.frame.Source.AbsoluteSize.Y))
 		end)
 
-		self:addToRenderStepUpdates(function()
+		self:bindToRenderStep(function()
 			self.tooltip:tooltipRenderStepUpdate()
 		end)
 
@@ -154,7 +158,7 @@ return {
 		end)
 	end,
 
-	addToRenderStepUpdates = function(self, fn)
+	bindToRenderStep = function(self, fn)
 		table.insert(self.data.RSFunctions, fn)
 	end,
 

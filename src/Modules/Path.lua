@@ -98,6 +98,7 @@ function Path.new()
 		end
 		self.canting = tonumber(self.canting)
 		self.length = tonumber(self.length)
+		self.primaryAxis = self.primaryAxis or "Z"
 
 		-- Create path model
 		local path = Instance.new("Folder")
@@ -106,7 +107,7 @@ function Path.new()
 
 		-- Convert two CFrames into 4 positions
 		local cf2 = cf1
-		local cf1 = cf1 * CFrame.new(0, 0, self.length)
+		cf1 = cf1 * CFrame.new(0, 0, self.length)
 		local dist = (cf1.p - cf0.p).Magnitude
 		local cosa = math.cos(math.acos(cf0.LookVector:Dot(cf1.LookVector)) / 2)
 		if math.abs((cf0.LookVector - cf1.LookVector).Magnitude) < 0.05 then
@@ -115,7 +116,8 @@ function Path.new()
 		local d = dist / (2 * cosa + 1)
 		curve:setControlPoints({ cf0.p, cf0.p + cf0.LookVector * d, cf1.p - cf1.LookVector * d, cf1.p })
 		local points: {Vector3}
-		if self.optimiseStraights and (cosa == 1) and (math.abs(cf0:PointToObjectSpace(cf2.Position).X) < 0.1) then
+		local relOffset = cf0:PointToObjectSpace(cf2.Position)
+		if self.optimiseStraights and (cosa == 1) and (math.abs(relOffset.X) < 0.1) and (math.abs(relOffset.Y) < 0.1) then
 			points = {cf0.p, cf2.p}
 		else
 			points = curve:getPointsFromSegmentLength(self.length)
@@ -127,6 +129,15 @@ function Path.new()
 		local minRadius
 		local maxIterations = #points - 1
 		local copiesTable = {}
+
+		local rotOffset = 0
+		if self.primaryAxis == "X" then
+			rotOffset = (if self.swapEnd then -math.pi else math.pi) / 2
+		end
+
+		local normalA = if self.primaryAxis == "Z" then Enum.NormalId.Front elseif self.swapEnd then Enum.NormalId.Left else Enum.NormalId.Right
+		local normalB = if self.primaryAxis == "Z" then Enum.NormalId.Back elseif self.swapEnd then Enum.NormalId.Right else Enum.NormalId.Left
+
 		for i = 1, maxIterations do
 			-- Create segment
 			local segment, copies
@@ -147,8 +158,12 @@ function Path.new()
 
 			-- Scale parts and models separately
 			if segment:IsA("BasePart") then
-				segment.Size = Vector3.new(segment.Size.X, segment.Size.Y, length)
-				segment.CFrame = CFrame.new(P0, P1) * CFrame.new(0, 0, -length / 2)
+				if self.primaryAxis == "Z" then
+					segment.Size = Vector3.new(segment.Size.X, segment.Size.Y, length)
+				else
+					segment.Size = Vector3.new(length, segment.Size.Y, segment.Size.Z)
+				end
+				segment.CFrame = CFrame.new(P0, P1) * CFrame.new(0, 0, -length / 2) * CFrame.Angles(0, rotOffset, 0)
 				local _, angle = template.CFrame:ToObjectSpace(segment.CFrame):ToOrientation()
 				if angle ~= 0 and length ~= 0 then
 					local radius = math.abs(2 * math.pi / angle * length)
@@ -159,15 +174,19 @@ function Path.new()
 				end
 			elseif segment:IsA("Model") then
 				-- Move the model to the correct CFrame
-				moveModel(segment, CFrame.new(P0, P1) * CFrame.new(0, 0, -length / 2))
+				moveModel(segment, CFrame.new(P0, P1) * CFrame.new(0, 0, -length / 2) * CFrame.Angles(0, rotOffset, 0))
 
 				-- Set length of segments
 				for i, v in pairs(copies) do
-					v.Size = Vector3.new(v.Size.X, v.Size.Y, length)
+					if self.primaryAxis == "Z" then
+						v.Size = Vector3.new(v.Size.X, v.Size.Y, length)
+					else
+						v.Size = Vector3.new(length, v.Size.Y, v.Size.Z)
+					end
 				end
 
 				local cf, length = segment:GetBoundingBox()
-				length = length.Z
+				length = length[self.primaryAxis]
 
 				-- Calculate minimum radius
 				do
@@ -186,10 +205,11 @@ function Path.new()
 				if i == maxIterations and fillGaps then
 					local point = workspace.CurrentCamera:FindFirstChild("ControlPoint")
 					point.CFrame = point.CFrame * CFrame.new(0, 0, 0.5 * point.Size.Z)
+					point = point:Clone()
 					for i, v in pairs(segment:GetDescendants()) do
 						if v:IsA("BasePart") then
 							ResizeAlign.DoExtend(
-								{ Object = v, Normal = Enum.NormalId.Front },
+								{ Object = v, Normal = normalA },
 								{ Object = point, Normal = Enum.NormalId.Front }
 							)
 						end
@@ -211,10 +231,10 @@ function Path.new()
 				local cf0
 				local template = i > 1 and segments[i - 1] or self.template
 				if v:IsA("BasePart") then
-					length = v.Size.Z
+					length = v.Size[self.primaryAxis]
 				else
 					cf0, length = v:GetBoundingBox()
-					length = length.Z
+					length = length[self.primaryAxis]
 				end
 				local _, angle
 				if length then
@@ -228,12 +248,15 @@ function Path.new()
 						radius = 2 * math.pi / angle * length
 					end
 					if radius then
-						local bankAngle = self.canting * minRadius / radius
-						if v:IsA("BasePart") then
+						local bankAngle = math.rad(self.canting * minRadius / radius)
+						--[[if v:IsA("BasePart") then
 							v.Orientation = Vector3.new(v.Orientation.X, v.Orientation.Y, bankAngle)
 						elseif v:IsA("Model") then
 							moveModel(v, cf0 * CFrame.Angles(0, 0, math.rad(bankAngle)))
-						end
+						end]]
+						local xAngle = self.primaryAxis == "X" and bankAngle or 0
+						local zAngle = self.primaryAxis == "Z" and bankAngle or 0
+						v:PivotTo(v:GetPivot() * CFrame.Angles(xAngle, 0, zAngle))
 					end
 				end
 			end
@@ -245,8 +268,8 @@ function Path.new()
 				for i, v in pairs(v) do
 					if fillGaps then
 						ResizeAlign.DoExtend(
-							{ Object = i, Normal = Enum.NormalId.Front },
-							{ Object = v, Normal = Enum.NormalId.Back }
+							{ Object = i, Normal = normalA },
+							{ Object = v, Normal = normalB }
 						)
 					end
 				end
@@ -255,8 +278,8 @@ function Path.new()
 				local template = i > 1 and segments[i - 1] or self.template
 				if segment:IsA("BasePart") then
 					ResizeAlign.DoExtend(
-						{ Object = template, Normal = Enum.NormalId.Front },
-						{ Object = segment, Normal = Enum.NormalId.Back }
+						{ Object = template, Normal = normalA },
+						{ Object = segment, Normal = normalB }
 					)
 				end
 			end
