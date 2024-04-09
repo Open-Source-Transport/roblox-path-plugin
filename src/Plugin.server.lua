@@ -48,6 +48,7 @@ local segmentLength = Value(20)
 local cantAngle = Value(0)
 local template = Value()
 local endpoint = Value()
+local reversePath = Value(false)
 local optimiseStraights = true
 local templateConnection: RBXScriptConnection?
 local endpointConnection: RBXScriptConnection?
@@ -57,8 +58,13 @@ local endpointConnection: RBXScriptConnection?
 local function getTemplateCf()
 	local templateLength = path.template:IsA("BasePart") and path.template.Size.Z or path.template:GetExtentsSize().Z
 	local toEdge = CFrame.new(0, 0, -0.5 * templateLength)
-	return path.template
-		and (path.template:IsA("BasePart") and path.template.CFrame * toEdge or path.template:GetBoundingBox() * toEdge)
+	if reversePath:get() then
+		return path.template
+			and (path.template:IsA("BasePart") and path.template.CFrame * toEdge * CFrame.Angles(0,180,0) or path.template:GetBoundingBox() * toEdge)
+	else
+		return path.template
+			and (path.template:IsA("BasePart") and path.template.CFrame * toEdge or path.template:GetBoundingBox() * toEdge)
+	end
 end
 
 local function getGradientValue(curve)
@@ -118,6 +124,7 @@ local function previewPath(path)
 		else
 			grade = "Decline: 1 in " .. tostring(-grade)
 		end
+		path.reversePath = reversePath:get()
 		gradeVal:set(grade)
 		if preview then
 			for _, v in pairs(preview:GetDescendants()) do
@@ -456,6 +463,27 @@ pluginUtil:addSectionToWidget({
 			Type = "Text",
 			Text = gradeVal,
 		},
+		{
+			Type = "Boolean",
+			Text = "Reverse Path",
+			OnChange = function(value)
+				reversePath:set(value)
+				pathChanged = true
+				setTemplate()
+
+				if value then
+					controlPoint.CFrame = getTemplateCf()
+					* (path.length and CFrame.new(0, 0, path.length) or CFrame.new(0, 0, 10))
+					local ReverseDirection = -controlPoint.CFrame.LookVector
+					controlPoint.CFrame = CFrame.lookAt(controlPoint.CFrame.Position, (controlPoint.CFrame.Position + ReverseDirection))
+				else
+					controlPoint.CFrame = getTemplateCf()
+					* (path.length and CFrame.new(0, 0, -path.length) or CFrame.new(0, 0, -10))
+					local ReverseDirection = -controlPoint.CFrame.LookVector
+					controlPoint.CFrame = CFrame.lookAt(controlPoint.CFrame.Position, (controlPoint.CFrame.Position + ReverseDirection))
+				end
+			end,
+		}
 	},
 })
 

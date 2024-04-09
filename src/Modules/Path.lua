@@ -105,6 +105,11 @@ function Path.new()
 		path.Parent = self.template.Parent.Parent:IsDescendantOf(workspace) and self.template.Parent.Parent or workspace
 
 		-- Convert two CFrames into 4 positions
+		if self.reversePath then
+			local temp = cf0
+			cf0 = cf1
+			cf1 = temp
+		end
 		local cf2 = cf1
 		local cf1 = cf1 * CFrame.new(0, 0, self.length)
 		local dist = (cf1.p - cf0.p).Magnitude
