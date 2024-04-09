@@ -46,6 +46,7 @@ local segmentLength = Value(20)
 local cantAngle = Value(0)
 local template = Value()
 local endpoint = Value()
+local optimiseStraights = true
 local templateConnection: RBXScriptConnection
 local endpointConnection: RBXScriptConnection
 
@@ -322,6 +323,7 @@ do
 		path = Path.new()
 		path.length = segmentLength:get()
 		path.canting = cantAngle:get()
+		path.optimiseStraights = optimiseStraights
 		RunService:BindToRenderStep("PathPlugin", Enum.RenderPriority.Camera.Value, function(step)
 
 			local s = tick()
@@ -410,11 +412,10 @@ pluginUtil:addSectionToWidget({
 			Key = "Segment Length",
 			Minimum = 1,
 			Maximum = 100,
-			DefaultValue = 20,
+			DefaultValue = segmentLength,
 			Unit = "Studs",
 			OnChange = function(value)
 				path.length = value
-				segmentLength:set(value)
 				pathChanged = true
 			end,
 		},
@@ -423,11 +424,20 @@ pluginUtil:addSectionToWidget({
 			Key = "Bank Angle",
 			Minimum = 0,
 			Maximum = 20,
-			DefaultValue = 0,
+			DefaultValue = cantAngle,
 			Unit = "Degrees",
 			OnChange = function(value)
 				path.canting = value
-				cantAngle:set(value)
+				pathChanged = true
+			end,
+		},
+		{
+			Type = "Boolean",
+			Key = "Optimise straights",
+			DefaultValue = optimiseStraights,
+			OnChange = function(value)
+				optimiseStraights = value
+				path.optimiseStraights = value
 				pathChanged = true
 			end,
 		},
@@ -453,6 +463,7 @@ pluginUtil:addElementToWidget({
 			path = Path.new()
 			path.length = segmentLength:get()
 			path.canting = cantAngle:get()
+			path.optimiseStraights = optimiseStraights
 			if prevEndpoint then
 				template:set(prevEndpoint)
 			else

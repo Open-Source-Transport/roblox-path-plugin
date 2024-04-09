@@ -89,15 +89,11 @@ Path.__index = Path
 function Path.new()
 	local self = setmetatable({}, Path)
 	local curve = Curve.new()
-	local lastSegment
 
 	-- :draw - draws the path in a modeland returns the model
 	function Path:draw(cf0, cf1, fillGaps)
 		-- Check if path is valid, if not pass error message
 		if not self.template or not self.length or not self.canting then
-			print(self.template)
-			print(self.length)
-			print(self.canting)
 			return nil
 		end
 		self.canting = tonumber(self.canting)
@@ -118,8 +114,13 @@ function Path.new()
 		end
 		local d = dist / (2 * cosa + 1)
 		curve:setControlPoints({ cf0.p, cf0.p + cf0.LookVector * d, cf1.p - cf1.LookVector * d, cf1.p })
-		local points = curve:getPointsFromSegmentLength(self.length)
-		table.insert(points, cf2.p)
+		local points: {Vector3}
+		if self.optimiseStraights and (cosa == 1) and (math.abs(cf0:PointToObjectSpace(cf2.Position).X) < 0.1) then
+			points = {cf0.p, cf2.p}
+		else
+			points = curve:getPointsFromSegmentLength(self.length)
+			table.insert(points, cf2.p)
+		end
 
 		-- Create segments
 		local lastSegment
