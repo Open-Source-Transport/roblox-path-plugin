@@ -11,7 +11,11 @@ The open source feature-rich Roblox Studio plugin for a variety of path-creating
 
 # Features
 
-- Easy to use plugin widget GUI
+- Easy-to-use plugin widget GUI
+
+- Automatic gap filling - utilises stravant's ResizeAlgin to provide gapfill with no extra setup required
+
+- Automatic optimisation
 
 - Cubic bezier curve paths
 
@@ -22,8 +26,6 @@ The open source feature-rich Roblox Studio plugin for a variety of path-creating
 - Fast previews with automatic refresh rate scaling
 
 - Connecting to existing paths, even ones not made by this plugin
-
-- Automatic GapFill - this plugin utilises stravant's ResizeAlgin to provide gapfill with no addition setup required.
 
 Unlike other tools, this tool doesn't lock you down to a specific type of "path" - as long as you've got a model which has all the parts facing in the same direction, you can use it. It is therefore highly customisable.
 
