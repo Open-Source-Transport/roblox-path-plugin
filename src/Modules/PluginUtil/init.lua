@@ -51,14 +51,21 @@ return {
 		for _, f in pairs(self.data.onDeactivate) do
 			f()
 		end
-		RUS:UnbindFromRenderStep(self.CONFIG.pluginId .. "RSUpdates")
+		self:runCloseFns()
 	end,
 
 	bindToActivate = function(self, fn)
 		table.insert(self.data.onActivate, fn)
-		if self.data.widget and self.data.widget.Enabled then
+		if not self.data.widget then
+			coroutine.wrap(function()
+				repeat task.wait() until self.data.widget
+				if self.data.widget.Enabled then
+					fn()
+				end
+			end)()
+		elseif self.data.widget.Enabled then
 			fn()
-		end
+		end	
 	end,
 
 	bindToPluginInputBegan = function(self, fn)
@@ -76,6 +83,12 @@ return {
 	bindToPluginInputEnded = function(self, fn)
 		if self.data.frame then
 			self.data.frame.InputEnded:Connect(fn)
+		end
+	end,
+
+	runCloseFns = function(self)
+		for _, f in pairs(self.data.closeFunctions) do
+			f()
 		end
 	end,
 
@@ -113,14 +126,14 @@ return {
 
 		toolbarButton:SetActive(widget.Enabled)
 
+		self.data.widget = widget
+
 		do
 			local function widgetEnabledUpdate()
 				toolbarButton:SetActive(widget.Enabled)
 				self.data.currentUI:set(0)
 				if not widget.Enabled then
-					for _, f in pairs(self.data.closeFunctions) do
-						f()
-					end
+					self:runCloseFns()
 				else
 					for _, f in pairs(self.data.onActivate) do
 						f()
@@ -134,8 +147,6 @@ return {
 		end
 
 		widget.Title = self.CONFIG.widgetTitle
-
-		self.data.widget = widget
 
 		self.data.frame = require(script.Assets.base)(self)
 
