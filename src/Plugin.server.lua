@@ -162,6 +162,7 @@ local function setEndpoint(value: Instance, sign: number?)
 		for _, c in pairs(value:GetDescendants()) do
 			if c:IsA("BasePart") and c.Size.Z > maxSize then
 				p = c
+				maxSize = c.Size.Z
 				break
 			end
 		end
