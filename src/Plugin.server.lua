@@ -4,11 +4,12 @@
 
 -- Services
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
+local RunService = game:GetService("RunService")
 local Selection = game:GetService("Selection")
 local UserInputService = game:GetService("UserInputService")
+local PhysicsService = game:GetService("PhysicsService")
 
 -- Constants
-local PREVIEW_REFRESH_RATE = 1 / 15
 local MAX_GRADIENT = 2000
 local TOOLBAR_NAME = "anthony0br/roblox-path-plugin"
 
@@ -28,15 +29,12 @@ local Value = fusion.Value
 
 pluginUtil:init(plugin:CreateToolbar(pluginUtil.CONFIG.toolbarName), plugin:CreateDockWidgetPluginGui(pluginUtil.CONFIG.pluginId, pluginUtil.CONFIG.widgetInfo))
 
-plugin.Deactivation:Connect(function()
-	pluginUtil:deactivate()
-end)
-
-plugin.Unloading:Connect(function()
-	pluginUtil:deactivate()
-end)
-
 local assets = CreateAssets()
+
+if not PhysicsService:IsCollisionGroupRegistered("PathPluginPreview") then
+	PhysicsService:RegisterCollisionGroup("PathPluginPreview")
+	PhysicsService:CollisionGroupSetCollidable("PathPluginPreview", "Default", false)
+end
 
 local pathChanged
 local controlPoint
@@ -48,6 +46,7 @@ local segmentLength = Value(20)
 local cantAngle = Value(0)
 local template = Value()
 local endpoint = Value()
+local templateConnection: RBXScriptConnection
 local endpointConnection: RBXScriptConnection
 
 -- Functions
@@ -123,6 +122,7 @@ local function previewPath(path)
 					v.LocalTransparencyModifier = 0.5
 					if v:IsA("BasePart") then
 						v.Locked = true
+						v.CollisionGroup = "PathPluginPreview"
 					end
 				end
 			end
@@ -144,6 +144,15 @@ local function resetPlugin()
 	end
 	controlPoint = nil
 	gradeVal:set("")
+
+	if templateConnection then
+		templateConnection:Disconnect()
+		templateConnection = nil
+	end
+	if endpointConnection then
+		endpointConnection:Disconnect()
+		endpointConnection = nil
+	end
 end
 
 resetPlugin()
@@ -152,6 +161,7 @@ local function setEndpoint(value: Instance, sign: number?)
 	highlights:removeHighlight("Endpoint")
 	if endpointConnection then
 		endpointConnection:Disconnect()
+		endpointConnection = nil
 	end
 	if not (value and controlPoint) then endpoint:set() return end
 	local addConnection = value == endpoint:get()
@@ -207,15 +217,37 @@ local function setEndpoint(value: Instance, sign: number?)
 
 	if addConnection then
 		endpointConnection = p:GetPropertyChangedSignal("CFrame"):Connect(function()
-			print("remove")
 			setEndpoint(value, sign)
 		end)
 	end
 end
 
+local isDraggingControlPoint = false;
+
+UserInputService.InputBegan:Connect(function(input: InputObject)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 and controlPoint then
+		local ray = workspace.CurrentCamera:ScreenPointToRay(input.Position.X, input.Position.Y)
+		local result = workspace:Raycast(ray.Origin, ray.Direction * 500)
+		if result and result.Instance == controlPoint then
+			isDraggingControlPoint = true
+		end
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(input: InputObject)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 and isDraggingControlPoint then
+		isDraggingControlPoint = false
+		print("end")
+	end
+end)
+
 local function setTemplate()
 	ChangeHistoryService:SetWaypoint("Set template")
 	local newSelection = template:get()
+	if templateConnection then
+		templateConnection:Disconnect()
+		templateConnection = nil
+	end
 	if path and newSelection then
 		if newSelection:IsA("BasePart") or newSelection:IsA("Model") then
 			path.template = newSelection
@@ -236,6 +268,7 @@ local function setTemplate()
 					if not controlPoint then
 						return
 					end
+					isDraggingControlPoint = false
 					if not controlPoint:IsDescendantOf(game) and path then
 						controlPoint = nil
 						template:set(nil)
@@ -244,13 +277,21 @@ local function setTemplate()
 				end)
 
 				-- Tell plugin to update path on changed
+
 				controlPoint.Changed:Connect(function()
+					if isDraggingControlPoint then
+						return
+					end
 					pathChanged = true
 					if not isUpdatingControlPoint then
 						setEndpoint()
 					end
 				end)
 			end
+
+			templateConnection = newSelection.Changed:Connect(function()
+				pathChanged = true
+			end)
 
 			-- Preview path
 			previewPath(newSelection and path)
@@ -264,28 +305,76 @@ local function setTemplate()
 	end
 end
 
---Plugin activation / deactivation
+--Plugin activation and RenderStep update - update preview if any changes
+do
 
-pluginUtil:bindToActivate(function()
-	path = Path.new()
-	path.length = segmentLength:get()
-	path.canting = cantAngle:get()
+	local lastUpdate = tick()
 
-	spawn(function()
-		while path do
-			if pathChanged then
+	local previewRefreshDelta = 0
+
+	local MIN_STEP = 1/60
+
+	local dragRayParams = RaycastParams.new()
+	dragRayParams.FilterType = Enum.RaycastFilterType.Blacklist
+	dragRayParams.FilterDescendantsInstances = {workspace.CurrentCamera}
+
+	pluginUtil:bindToActivate(function()
+		path = Path.new()
+		path.length = segmentLength:get()
+		path.canting = cantAngle:get()
+		RunService:BindToRenderStep("PathPlugin", Enum.RenderPriority.Camera.Value, function(step)
+
+			local s = tick()
+	
+			if tick() - lastUpdate < previewRefreshDelta then
+				return
+			end
+	
+			lastUpdate = s
+
+			if isDraggingControlPoint and controlPoint then --override default studio dragger to avoid any collisions with preview
+				local ray = workspace.CurrentCamera:ScreenPointToRay(UserInputService:GetMouseLocation().X, UserInputService:GetMouseLocation().Y)
+				local result = workspace:Raycast(ray.Origin, ray.Direction * 500, dragRayParams)
+				if result then
+					controlPoint.CFrame = controlPoint.CFrame + result.Position - controlPoint.Position + controlPoint.Size * result.Normal / 2
+				end
+				pathChanged = true
+			end
+		
+			if path and pathChanged then
 				previewPath(path)
 				pathChanged = false
 			end
-			wait(PREVIEW_REFRESH_RATE)
-		end
+		
+			local delta = tick() - s
+			
+			if delta * 4 > MIN_STEP then --Taking too long to run - decrease refresh rate
+				previewRefreshDelta = delta * 8
+			else
+				previewRefreshDelta = 0
+			end
+	
+		end)
 	end)
-end)
 
--- Cleanup before PluginGui closed
-pluginUtil:bindFnToClose(function()
-	resetPlugin()
-end)
+	-- Cleanup on close
+	pluginUtil:bindFnToClose(function()
+		resetPlugin()
+	end)
+
+	plugin.Deactivation:Connect(function()
+		pluginUtil:deactivate()
+		resetPlugin()
+		RunService:UnbindFromRenderStep("PathPlugin")
+	end)
+	
+	plugin.Unloading:Connect(function()
+		pluginUtil:deactivate()
+		resetPlugin()
+		RunService:UnbindFromRenderStep("PathPlugin")
+	end)
+
+end
 
 -- Gui
 
