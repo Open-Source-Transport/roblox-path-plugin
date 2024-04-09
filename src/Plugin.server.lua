@@ -238,7 +238,6 @@ end)
 UserInputService.InputEnded:Connect(function(input: InputObject)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 and isDraggingControlPoint then
 		isDraggingControlPoint = false
-		print("end")
 	end
 end)
 
