@@ -5,6 +5,7 @@
 -- Services
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local Selection = game:GetService("Selection")
+local UserInputService = game:GetService("UserInputService")
 
 -- Constants
 local PREVIEW_REFRESH_RATE = 1 / 15
@@ -19,18 +20,18 @@ local CreateAssets = require(modules.CreateAssets)
 local pluginUtil = require(modules.PluginUtil)
 local fusion = require(packages.fusion)
 
-local Value = fusion.Value;
+local Value = fusion.Value
 
 -- Initialise plugin
 
 pluginUtil:init(plugin:CreateToolbar(pluginUtil.CONFIG.toolbarName), plugin:CreateDockWidgetPluginGui(pluginUtil.CONFIG.pluginId, pluginUtil.CONFIG.widgetInfo))
 
 plugin.Deactivation:Connect(function()
-    pluginUtil:deactivate();
+	pluginUtil:deactivate()
 end)
 
 plugin.Unloading:Connect(function()
-    pluginUtil:deactivate();
+	pluginUtil:deactivate()
 end)
 
 local assets = CreateAssets()
@@ -38,11 +39,13 @@ local assets = CreateAssets()
 local pathChanged
 local controlPoint
 local path
+local isUpdatingControlPoint = false
 
 local gradeVal = Value("Flat")
 local segmentLength = Value(20)
 local cantAngle = Value(0)
 local template = Value()
+local endpoint = Value()
 
 -- Functions
 
@@ -139,11 +142,13 @@ local function resetPlugin()
 	gradeVal:set("")
 end
 
+resetPlugin()
+
 local function setTemplate()
 	ChangeHistoryService:SetWaypoint("Set template")
 	local newSelection = template:get()
 	if path and newSelection then
-		if (newSelection:IsA("BasePart") or newSelection:IsA("Model")) then
+		if newSelection:IsA("BasePart") or newSelection:IsA("Model") then
 			path.template = newSelection
 			if controlPoint then
 				controlPoint:Destroy()
@@ -155,7 +160,9 @@ local function setTemplate()
 
 			-- Reset when deleted
 			controlPoint.AncestryChanged:Connect(function()
-				if not controlPoint then return end;
+				if not controlPoint then
+					return
+				end
 				if not controlPoint:IsDescendantOf(game) and path then
 					controlPoint = nil
 					template:set(nil)
@@ -166,6 +173,9 @@ local function setTemplate()
 			-- Tell plugin to update path on changed
 			controlPoint.Changed:Connect(function()
 				pathChanged = true
+				if not isUpdatingControlPoint and endpoint:get() then
+					endpoint:set()
+				end
 			end)
 
 			-- Preview path
@@ -209,6 +219,48 @@ pluginUtil:addElementToWidget({
 	EmptyText = "No Track Selected",
 	OnChange = function()
 		setTemplate()
+	end,
+})
+
+pluginUtil:addElementToWidget({
+	Type = "Instance",
+	Key = "Endpoint",
+	DefaultValue = nil,
+	SelectingText = "Select endpoint",
+	EmptyText = "ControlPoint",
+	OnChange = function(value) --When endpoint selected, set control point to endpoint
+		if not value then return end;
+		local p: nil
+		isUpdatingControlPoint = true;
+		local mouse = UserInputService:GetMouseLocation()
+		print(mouse.X, mouse.Y)
+		local ray = workspace.CurrentCamera:ScreenPointToRay(mouse.X, mouse.Y)
+		local rayParams = RaycastParams.new()
+		rayParams.CollisionGroup = "StudioSelectable"
+		local result = workspace:Raycast(ray.Origin, ray.Direction * 500, rayParams)
+		if value:IsA("Model") then
+			local maxSize = 0
+			for _, c in pairs(value:GetDescendants()) do
+				if c:IsA("BasePart") and c.Size.Z > maxSize then
+					p = c
+					break
+				end
+			end
+			if maxSize == 0 then endpoint:set() return end;
+		elseif value:IsA("BasePart") then
+			p = value
+		else
+			endpoint:set()
+			return
+		end
+		
+		local relPos = math.sign(value:GetPivot():PointToObjectSpace(result.Position).Z) * p.Size.Z / 2
+
+		local relCF = CFrame.new(Vector3.new(0, 0, relPos), Vector3.new())
+		
+		controlPoint.CFrame = value:GetPivot():ToWorldSpace(relCF)
+
+		isUpdatingControlPoint = false;
 	end
 })
 
@@ -224,8 +276,9 @@ pluginUtil:addSectionToWidget({
 			Unit = "Studs",
 			OnChange = function(value)
 				path.length = value
+				segmentLength:set(value)
 				pathChanged = true
-			end
+			end,
 		},
 		{
 			Type = "Slider",
@@ -236,14 +289,15 @@ pluginUtil:addSectionToWidget({
 			Unit = "Degrees",
 			OnChange = function(value)
 				path.canting = value
+				cantAngle:set(value)
 				pathChanged = true
-			end
+			end,
 		},
 		{
 			Type = "Text",
 			Text = gradeVal,
-		}
-	}
+		},
+	},
 })
 
 pluginUtil:addElementToWidget({
@@ -264,5 +318,5 @@ pluginUtil:addElementToWidget({
 			setTemplate()
 			ChangeHistoryService:SetWaypoint("Render Path")
 		end
-	end
+	end,
 })
