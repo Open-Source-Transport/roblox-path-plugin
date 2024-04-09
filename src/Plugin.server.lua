@@ -173,7 +173,7 @@ local function setTemplate()
 			-- Tell plugin to update path on changed
 			controlPoint.Changed:Connect(function()
 				pathChanged = true
-				if not isUpdatingControlPoint and endpoint:get() then
+				if not isUpdatingControlPoint then
 					endpoint:set()
 				end
 			end)
