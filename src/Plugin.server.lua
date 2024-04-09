@@ -315,11 +315,11 @@ local function setTemplate()
 			previewPath(newSelection and path)
 		else
 			highlights:removeHighlight("Startpoint")
-			template:set(nil)
+			template:set()
 		end
 	else
 		highlights:removeHighlight("Startpoint")
-		template:set(nil)
+		template:set()
 	end
 end
 
@@ -371,6 +371,7 @@ do
 					- controlPoint.Position
 					+ controlPoint.Size * result.Normal / 2
 			end
+			endpoint:set()
 			pathChanged = true
 		end
 
