@@ -1,5 +1,7 @@
 <h1>roblox-path-plugin</h1>
 The open source feature-rich Roblox Studio plugin for a variety of path-creating needs, such as railways, roads, fences and more!
+<br/><br/>
+<img width="1002" alt="image" src="https://github.com/Open-Source-Transport/roblox-path-plugin/assets/129159900/e1abf586-bbf0-4037-8704-3cd3518add1d">
 
 <h2> Contents </h2>
 
