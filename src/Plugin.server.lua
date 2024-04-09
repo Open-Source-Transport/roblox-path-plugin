@@ -5,6 +5,7 @@
 -- Services
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local Selection = game:GetService("Selection")
+local UserInputService = game:GetService("UserInputService")
 
 -- Constants
 local PREVIEW_REFRESH_RATE = 1 / 15
@@ -18,6 +19,8 @@ local Path = require(modules.Path)
 local CreateAssets = require(modules.CreateAssets)
 local pluginUtil = require(modules.PluginUtil)
 local fusion = require(packages.fusion)
+local Types = require(modules.Types)
+local highlights = require(modules.Highlights)
 
 local Value = fusion.Value
 
@@ -38,11 +41,14 @@ local assets = CreateAssets()
 local pathChanged
 local controlPoint
 local path
+local isUpdatingControlPoint = false
 
 local gradeVal = Value("Flat")
 local segmentLength = Value(20)
 local cantAngle = Value(0)
 local template = Value()
+local endpoint = Value()
+local endpointConnection: RBXScriptConnection
 
 -- Functions
 
@@ -130,8 +136,9 @@ end
 
 -- Resets the plugin
 local function resetPlugin()
+	highlights:clearHighlights()
 	for _, c in pairs(workspace.CurrentCamera:GetChildren()) do
-		if c.Name == "PathPreview" or c.Name == "ControlPoint" then
+		if c.Name == "PathPreview" or c.Name == "ControlPoint" or c.Name == "Highlight" then
 			c:Destroy()
 		end
 	end
@@ -141,42 +148,119 @@ end
 
 resetPlugin()
 
+local function setEndpoint(value: Instance, sign: number?)
+	highlights:removeHighlight("Endpoint")
+	if endpointConnection then
+		endpointConnection:Disconnect()
+	end
+	if not (value and controlPoint) then endpoint:set() return end
+	local addConnection = value == endpoint:get()
+	local p: nil
+	isUpdatingControlPoint = true
+	if value:IsA("Model") then
+		local maxSize = 0
+		for _, c in pairs(value:GetDescendants()) do
+			if c:IsA("BasePart") and c.Size.Z > maxSize then
+				p = c
+				maxSize = c.Size.Z
+				break
+			end
+		end
+		if maxSize == 0 then endpoint:set() return end
+	elseif value:IsA("BasePart") then
+		p = value
+	else
+		endpoint:set()
+		return
+	end
+
+	highlights:addHighlight("Endpoint", value)
+
+	if not sign then
+
+		local mouse = UserInputService:GetMouseLocation()
+		local ray = workspace.CurrentCamera:ScreenPointToRay(mouse.X, mouse.Y)
+		local rayParams = RaycastParams.new()
+		rayParams.CollisionGroup = "StudioSelectable"
+		local result = workspace:Raycast(ray.Origin, ray.Direction * 500, rayParams)
+		
+		if not (result and ((result.Instance == value) or (result.Instance:IsDescendantOf(value)))) then
+			if template:get() then
+				result = template:get():GetPivot()
+			else
+				return
+			end
+		end
+
+		sign = math.sign(value:GetPivot():PointToObjectSpace(result.Position).Z)
+	end
+
+	endpoint:set(value)
+
+	local relPos = sign * p.Size.Z / 2
+
+	local relCF = CFrame.new(Vector3.new(0, 0, relPos), Vector3.new())
+	
+	controlPoint.CFrame = value:GetPivot():ToWorldSpace(relCF)
+
+	isUpdatingControlPoint = false
+
+	if addConnection then
+		endpointConnection = p:GetPropertyChangedSignal("CFrame"):Connect(function()
+			print("remove")
+			setEndpoint(value, sign)
+		end)
+	end
+end
+
 local function setTemplate()
 	ChangeHistoryService:SetWaypoint("Set template")
 	local newSelection = template:get()
 	if path and newSelection then
 		if newSelection:IsA("BasePart") or newSelection:IsA("Model") then
 			path.template = newSelection
-			if controlPoint then
-				controlPoint:Destroy()
+			template:set(newSelection)
+			highlights:addHighlight("Startpoint", newSelection)
+
+			if not endpoint:get() then
+				if controlPoint then
+					controlPoint:Destroy()
+				end
+				controlPoint = assets.ControlPoint:Clone()
+				controlPoint.Parent = workspace.Camera
+				controlPoint.CFrame = getTemplateCf()
+					* (path.length and CFrame.new(0, 0, -path.length) or CFrame.new(0, 0, -10))
+
+				-- Reset when deleted
+				controlPoint.AncestryChanged:Connect(function()
+					if not controlPoint then
+						return
+					end
+					if not controlPoint:IsDescendantOf(game) and path then
+						controlPoint = nil
+						template:set(nil)
+						previewPath()
+					end
+				end)
+
+				-- Tell plugin to update path on changed
+				controlPoint.Changed:Connect(function()
+					pathChanged = true
+					if not isUpdatingControlPoint then
+						setEndpoint()
+					end
+				end)
 			end
-			controlPoint = assets.ControlPoint:Clone()
-			controlPoint.Parent = workspace.Camera
-			controlPoint.CFrame = getTemplateCf()
-				* (path.length and CFrame.new(0, 0, -path.length) or CFrame.new(0, 0, -10))
-
-			-- Reset when deleted
-			controlPoint.AncestryChanged:Connect(function()
-				if not controlPoint then
-					return
-				end
-				if not controlPoint:IsDescendantOf(game) and path then
-					controlPoint = nil
-					template:set(nil)
-					previewPath()
-				end
-			end)
-
-			-- Tell plugin to update path on changed
-			controlPoint.Changed:Connect(function()
-				pathChanged = true
-			end)
 
 			-- Preview path
 			previewPath(newSelection and path)
 		else
+			highlights:removeHighlight("Startpoint")
 			template:set(nil)
 		end
+	else
+		highlights:removeHighlight("Startpoint")
+		template:set(nil)
 	end
 end
 
@@ -212,8 +296,21 @@ pluginUtil:addElementToWidget({
 	SelectingText = "Select Track Model",
 	EmptyText = "No Track Selected",
 	OnChange = function()
+		Selection:Set({})
 		setTemplate()
 	end,
+})
+
+pluginUtil:addElementToWidget({
+	Type = "Instance",
+	Key = "Endpoint",
+	DefaultValue = endpoint,
+	SelectingText = "Select endpoint",
+	EmptyText = "ControlPoint",
+	OnChange = function(value) --When endpoint selected, set control point to endpoint
+		Selection:Set({})
+		setEndpoint(value)
+	end
 })
 
 pluginUtil:addSectionToWidget({
@@ -257,16 +354,24 @@ pluginUtil:addElementToWidget({
 	Text = "Render Path",
 	OnClick = function()
 		if controlPoint and path.template then
+			isUpdatingControlPoint = true
 			ChangeHistoryService:SetWaypoint("Render Path")
 			previewPath()
 			local folder = path:draw(getTemplateCf(), controlPoint.CFrame, true)
 			path.template = nil
+			local prevEndpoint = endpoint:get()
 			resetPlugin()
 			path = Path.new()
 			path.length = segmentLength:get()
 			path.canting = cantAngle:get()
-			local tracks = folder:GetChildren()
-			template:set(tracks[#tracks])
+			if prevEndpoint then
+				template:set(prevEndpoint)
+			else
+				local tracks = folder:GetChildren()
+				template:set(tracks[#tracks])
+			end
+			setEndpoint()
+			isUpdatingControlPoint = false
 			setTemplate()
 			ChangeHistoryService:SetWaypoint("Render Path")
 		end
