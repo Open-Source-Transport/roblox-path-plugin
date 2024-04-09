@@ -195,6 +195,8 @@ local function setEndpoint(value: Instance, sign: number?)
 		sign = math.sign(value:GetPivot():PointToObjectSpace(result.Position).Z)
 	end
 
+	endpoint:set(value)
+
 	local relPos = sign * p.Size.Z / 2
 
 	local relCF = CFrame.new(Vector3.new(0, 0, relPos), Vector3.new())
@@ -205,6 +207,7 @@ local function setEndpoint(value: Instance, sign: number?)
 
 	if addConnection then
 		endpointConnection = p:GetPropertyChangedSignal("CFrame"):Connect(function()
+			print("remove")
 			setEndpoint(value, sign)
 		end)
 	end
@@ -351,6 +354,7 @@ pluginUtil:addElementToWidget({
 	Text = "Render Path",
 	OnClick = function()
 		if controlPoint and path.template then
+			isUpdatingControlPoint = true
 			ChangeHistoryService:SetWaypoint("Render Path")
 			previewPath()
 			local folder = path:draw(getTemplateCf(), controlPoint.CFrame, true)
@@ -367,6 +371,7 @@ pluginUtil:addElementToWidget({
 				template:set(tracks[#tracks])
 			end
 			setEndpoint()
+			isUpdatingControlPoint = false
 			setTemplate()
 			ChangeHistoryService:SetWaypoint("Render Path")
 		end
