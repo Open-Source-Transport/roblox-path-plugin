@@ -507,7 +507,7 @@ pluginUtil:addElementToWidget({
 				template:set(prevEndpoint)
 			else
 				local tracks = folder:GetChildren()
-				template:set(tracks[#tracks])
+				template:set(reversePath and tracks[1] or tracks[#tracks])
 			end
 			setEndpoint()
 			isUpdatingControlPoint = false
