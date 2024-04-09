@@ -139,6 +139,8 @@ local function resetPlugin()
 	gradeVal:set("")
 end
 
+resetPlugin()
+
 local function setTemplate()
 	ChangeHistoryService:SetWaypoint("Set template")
 	local newSelection = template:get()
@@ -226,6 +228,7 @@ pluginUtil:addSectionToWidget({
 			Unit = "Studs",
 			OnChange = function(value)
 				path.length = value
+				segmentLength:set(value)
 				pathChanged = true
 			end,
 		},
@@ -238,6 +241,7 @@ pluginUtil:addSectionToWidget({
 			Unit = "Degrees",
 			OnChange = function(value)
 				path.canting = value
+				cantAngle:set(value)
 				pathChanged = true
 			end,
 		},
