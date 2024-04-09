@@ -33,6 +33,12 @@ In 2019, Anthony (@anthony0br) created a simple tool aimed at creating railway t
 
 Recently, a group of developers in this community have come together, creating "Open Source Transport", to improve and maintain this plugin!
 
+# Installation
+
+If you want to use this plugin now we suggest cloning the main branch and using Rojo to build this project then click "Save as local plugin" on the Plugin model in Roblox Studio.
+
+Soon, releases will be available on the Github releases page and a release with automatic updates will be published on the Roblox plugin store.
+
 # Limitations
 
 Your 'segment' template needs to have all its BaseParts lined up in a single axis direction (the model can be rotated in any way).
