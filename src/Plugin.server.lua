@@ -48,7 +48,7 @@ local cantAngle = Value(0)
 local template = Value()
 local endpoint = Value()
 local reversePath = Value(false)
-local primaryAxis = "Z"
+local primaryAxis: "Z" | "X" = "Z"
 local optimiseStraights = true
 local templateConnection: RBXScriptConnection?
 local endpointConnection: RBXScriptConnection?
@@ -183,9 +183,9 @@ local function setEndpoint(value: (BasePart | Model)?, sign: number?)
 	if value:IsA("Model") then
 		local maxSize = 0
 		for _, c in pairs(value:GetDescendants()) do
-			if c:IsA("BasePart") and c.Size.Z > maxSize then
+			if c:IsA("BasePart") and c.Size[primaryAxis] > maxSize then
 				p = c
-				maxSize = c.Size.Z
+				maxSize = c.Size[primaryAxis]
 				break
 			end
 		end
@@ -217,7 +217,8 @@ local function setEndpoint(value: (BasePart | Model)?, sign: number?)
 			end
 		end
 
-		sign = math.sign(value:GetPivot():PointToObjectSpace(result.Position).Z)
+		local pos = (value:GetPivot():PointToObjectSpace(result.Position))
+		sign = math.sign(pos[primaryAxis])
 	end
 	if not sign then
 		return
@@ -225,9 +226,10 @@ local function setEndpoint(value: (BasePart | Model)?, sign: number?)
 
 	endpoint:set(value)
 
-	local relPos = sign * p.Size.Z / 2
+	local s = p.Size[primaryAxis]
+	local relPos = sign * (s) / 2
 
-	local relCF = CFrame.new(Vector3.new(0, 0, relPos), Vector3.new())
+	local relCF = CFrame.new(Vector3.new(if primaryAxis == "X" then relPos else 0, 0, if primaryAxis == "Z" then relPos else 0), Vector3.new())
 
 	controlPoint.CFrame = value:GetPivot():ToWorldSpace(relCF)
 
@@ -482,7 +484,7 @@ pluginUtil:addSectionToWidget({
 			OnChange = function(value)
 				pathChanged = true
 
-				primaryAxis = value and "X" or "Z"
+				primaryAxis = if value then "X" else "Z"
 				path.primaryAxis = primaryAxis
 				if endpoint:get() then
 					setEndpoint(endpoint:get())

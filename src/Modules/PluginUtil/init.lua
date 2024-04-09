@@ -44,6 +44,7 @@ return {
 
 	bindFnToClose = function(self, fn)
 		table.insert(self.data.closeFunctions, fn)
+		RUS:UnbindFromRenderStep(self.CONFIG.pluginId .. "RSUpdates")
 	end,
 
 	deactivate = function(self)
