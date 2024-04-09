@@ -10,11 +10,19 @@ local Spring = fusion.Spring
 
 return function(pluginUtil, i: number, elemData: Types.Property<boolean>)
 	local val = elemData.DefaultValue
-	local activeValue = Value(0)
-	if val then
-		activeValue:set(1)
+	local activeValue
+	if typeof(val) == "table" and val.get and typeof(val:get()) == "boolean" then
+		activeValue = val
+	else
+		activeValue = Value((val and true) or false)
 	end
-	local spring = Spring(activeValue, 40, 1)
+	local spring = Spring(
+		Computed(function()
+			return activeValue:get() and 1 or 0
+		end),
+		40,
+		1
+	)
 	return New("Frame")({
 		Name = i,
 		LayoutOrder = i,
@@ -88,13 +96,8 @@ return function(pluginUtil, i: number, elemData: Types.Property<boolean>)
 					}),
 				},
 				[OnEvent("Activated")] = function()
-					val = not val
-					if val then
-						activeValue:set(1)
-					else
-						activeValue:set(0)
-					end
-					elemData.OnChange(val)
+					activeValue:set(not activeValue:get())
+					elemData.OnChange(activeValue:get())
 				end,
 			}),
 		},
