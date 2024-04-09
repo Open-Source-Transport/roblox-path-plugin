@@ -1,6 +1,6 @@
 -- Plugin.server.lua
 -- The main script for the plugin
--- Authors: Anthony O'Brien
+-- Authors: Anthony O'Brien, arandomollie
 
 -- Services
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
@@ -11,7 +11,6 @@ local PhysicsService = game:GetService("PhysicsService")
 
 -- Constants
 local MAX_GRADIENT = 2000
-local TOOLBAR_NAME = "anthony0br/roblox-path-plugin"
 
 -- Modules
 local modules = script.Parent.Modules
@@ -27,7 +26,10 @@ local Value = fusion.Value
 
 -- Initialise plugin
 
-pluginUtil:init(plugin:CreateToolbar(pluginUtil.CONFIG.toolbarName), plugin:CreateDockWidgetPluginGui(pluginUtil.CONFIG.pluginId, pluginUtil.CONFIG.widgetInfo))
+pluginUtil:init(
+	plugin:CreateToolbar(pluginUtil.CONFIG.toolbarName),
+	plugin:CreateDockWidgetPluginGui(pluginUtil.CONFIG.pluginId, pluginUtil.CONFIG.widgetInfo)
+)
 
 local assets = CreateAssets()
 
@@ -47,8 +49,8 @@ local cantAngle = Value(0)
 local template = Value()
 local endpoint = Value()
 local optimiseStraights = true
-local templateConnection: RBXScriptConnection
-local endpointConnection: RBXScriptConnection
+local templateConnection: RBXScriptConnection?
+local endpointConnection: RBXScriptConnection?
 
 -- Functions
 
@@ -118,7 +120,7 @@ local function previewPath(path)
 		end
 		gradeVal:set(grade)
 		if preview then
-			for i, v in pairs(preview:GetDescendants()) do
+			for _, v in pairs(preview:GetDescendants()) do
 				if v:IsA("BasePart") or v:IsA("Decal") then
 					v.LocalTransparencyModifier = 0.5
 					if v:IsA("BasePart") then
@@ -158,15 +160,18 @@ end
 
 resetPlugin()
 
-local function setEndpoint(value: Instance, sign: number?)
+local function setEndpoint(value: (BasePart | Model)?, sign: number?)
 	highlights:removeHighlight("Endpoint")
 	if endpointConnection then
 		endpointConnection:Disconnect()
 		endpointConnection = nil
 	end
-	if not (value and controlPoint) then endpoint:set() return end
+	if not (value and controlPoint) then
+		endpoint:set()
+		return
+	end
 	local addConnection = value == endpoint:get()
-	local p: nil
+	local p: BasePart
 	isUpdatingControlPoint = true
 	if value:IsA("Model") then
 		local maxSize = 0
@@ -177,7 +182,10 @@ local function setEndpoint(value: Instance, sign: number?)
 				break
 			end
 		end
-		if maxSize == 0 then endpoint:set() return end
+		if maxSize == 0 then
+			endpoint:set()
+			return
+		end
 	elseif value:IsA("BasePart") then
 		p = value
 	else
@@ -188,13 +196,12 @@ local function setEndpoint(value: Instance, sign: number?)
 	highlights:addHighlight("Endpoint", value)
 
 	if not sign then
-
 		local mouse = UserInputService:GetMouseLocation()
 		local ray = workspace.CurrentCamera:ScreenPointToRay(mouse.X, mouse.Y)
 		local rayParams = RaycastParams.new()
 		rayParams.CollisionGroup = "StudioSelectable"
 		local result = workspace:Raycast(ray.Origin, ray.Direction * 500, rayParams)
-		
+
 		if not (result and ((result.Instance == value) or (result.Instance:IsDescendantOf(value)))) then
 			if template:get() then
 				result = template:get():GetPivot()
@@ -205,13 +212,16 @@ local function setEndpoint(value: Instance, sign: number?)
 
 		sign = math.sign(value:GetPivot():PointToObjectSpace(result.Position).Z)
 	end
+	if not sign then
+		return
+	end
 
 	endpoint:set(value)
 
 	local relPos = sign * p.Size.Z / 2
 
 	local relCF = CFrame.new(Vector3.new(0, 0, relPos), Vector3.new())
-	
+
 	controlPoint.CFrame = value:GetPivot():ToWorldSpace(relCF)
 
 	isUpdatingControlPoint = false
@@ -223,7 +233,7 @@ local function setEndpoint(value: Instance, sign: number?)
 	end
 end
 
-local isDraggingControlPoint = false;
+local isDraggingControlPoint = false
 
 UserInputService.InputBegan:Connect(function(input: InputObject)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 and controlPoint then
@@ -307,54 +317,57 @@ end
 
 --Plugin activation and RenderStep update - update preview if any changes
 do
-
 	local lastUpdate = tick()
 
 	local previewRefreshDelta = 0
 
-	local MIN_STEP = 1/60
+	local MIN_STEP = 1 / 60
 
 	local dragRayParams = RaycastParams.new()
-	dragRayParams.FilterType = Enum.RaycastFilterType.Blacklist
-	dragRayParams.FilterDescendantsInstances = {workspace.CurrentCamera}
+	dragRayParams.FilterType = Enum.RaycastFilterType.Exclude
+	dragRayParams.FilterDescendantsInstances = { workspace.CurrentCamera }
 
 	pluginUtil:bindToActivate(function()
 		path = Path.new()
 		path.length = segmentLength:get()
 		path.canting = cantAngle:get()
 		path.optimiseStraights = optimiseStraights
-		RunService:BindToRenderStep("PathPlugin", Enum.RenderPriority.Camera.Value, function(step)
-
+		RunService:BindToRenderStep("PathPlugin", Enum.RenderPriority.Camera.Value, function(_step)
 			local s = tick()
-	
+
 			if tick() - lastUpdate < previewRefreshDelta then
 				return
 			end
-	
+
 			lastUpdate = s
 
 			if isDraggingControlPoint and controlPoint then --override default studio dragger to avoid any collisions with preview
-				local ray = workspace.CurrentCamera:ScreenPointToRay(UserInputService:GetMouseLocation().X, UserInputService:GetMouseLocation().Y)
+				local ray = workspace.CurrentCamera:ScreenPointToRay(
+					UserInputService:GetMouseLocation().X,
+					UserInputService:GetMouseLocation().Y
+				)
 				local result = workspace:Raycast(ray.Origin, ray.Direction * 500, dragRayParams)
 				if result then
-					controlPoint.CFrame = controlPoint.CFrame + result.Position - controlPoint.Position + controlPoint.Size * result.Normal / 2
+					controlPoint.CFrame = controlPoint.CFrame
+						+ result.Position
+						- controlPoint.Position
+						+ controlPoint.Size * result.Normal / 2
 				end
 				pathChanged = true
 			end
-		
+
 			if path and pathChanged then
 				previewPath(path)
 				pathChanged = false
 			end
-		
+
 			local delta = tick() - s
-			
+
 			if delta * 4 > MIN_STEP then --Taking too long to run - decrease refresh rate
 				previewRefreshDelta = delta * 8
 			else
 				previewRefreshDelta = 0
 			end
-	
 		end)
 	end)
 
@@ -368,13 +381,12 @@ do
 		resetPlugin()
 		RunService:UnbindFromRenderStep("PathPlugin")
 	end)
-	
+
 	plugin.Unloading:Connect(function()
 		pluginUtil:deactivate()
 		resetPlugin()
 		RunService:UnbindFromRenderStep("PathPlugin")
 	end)
-
 end
 
 -- Gui
@@ -400,7 +412,7 @@ pluginUtil:addElementToWidget({
 	OnChange = function(value) --When endpoint selected, set control point to endpoint
 		Selection:Set({})
 		setEndpoint(value)
-	end
+	end,
 })
 
 pluginUtil:addSectionToWidget({
