@@ -14,7 +14,7 @@ local currentActive = Value{
 };
 
 game.Selection.SelectionChanged:Connect(function()
-    wait()
+    task.wait()
     if currentActive:get().Value and #game.Selection:Get() == 1 then
         currentActive:get().Value:set(game.Selection:Get()[1])
         if currentActive:get().OnChange then
