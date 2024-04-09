@@ -1,15 +1,52 @@
-# Background
+<h1>roblox-path-plugin</h1>
+The open source feature-rich Roblox Studio plugin for a variety of path-creating needs, such as railways, roads, fences and more!
 
-In 2019, I created a simple tool aimed at creating railway tracks using Bezier Curves for Roblox games called "Electrified Track Placer". Unfortunately, this game project came to an end, but I released much of my source code to the community in an effort to help put my code to a use - and lots of people have found my work useful in implementing CFrame-based. However, that module contained an rbxm, which was this plugin, and it's turned out to be the most widely used part of the code I released!
+<h2> Contents </h2>
 
-5 years later, more, better bezier-curved based plugins exist. In fact, I don't even think bezier curves are the best answer to this problem. There are many problems with the plugin too, like the messy "Path" folders it makes and a disturbingly high crash rate. However, lots of people are still having to resort to using my buggy creation due to the features it offers, and some have made their own modifications! Also, the open source community has come a long way.
+* [Features](#features)
+* [History](#history)
+* [Installation](#installation)
+* [Contributing](#contributing)
+* [License](#license)
 
-I am giving this plugin its own repository so we can work on this together, properly manage the project with git a
+# Features
 
-# What's next
+- Easy to use plugin widget GUI
 
-This needs to be converted from an rbxm file to a proper git repository that works with rojo, wally, etc. After that, we'll start working on anything else in Issues. I also want to move away from the name "Electrified Track Placer", since people have been using this for all sorts (I've seen people placing fences, and even weirder things).
+- Cubic bezier curve paths
+
+- Axis selection
+
+- Fast previews with automatic refresh rate scaling
+
+- Connecting to existing paths, even ones not made by this plugin
+
+- Automatic GapFill - this plugin utilises stravant's ResizeAlgin to provide gapfill with no addition setup required.
+
+Unlike other tools, this tool doesn't lock you down to a specific type of "path" - as long as you've got a model which has all the parts facing in the same direction, you can use it. It is therefore highly customisable.
+
+More features are planned! If something you need is missing, feel free to [contribute](#contributing).
+
+# History
+
+In 2019, Anthony (@anthony0br) created a simple tool aimed at creating railway tracks using Bezier Curves called "Electrified Track Placer". Originally developed for a specific project, this was subsequently open sourced (released as a .rbxm) and used by many developers on Roblox, particularly in transport games.
+
+Recently, a group of developers in this community have come together, creating "Open Source Transport", to improve and maintain this plugin!
+
+# Limitations
+
+Your 'segment' template needs to have all its BaseParts lined up in a single axis direction (the model can be rotated in any way).
+
+This plugin works with 'box' shaped segments. If you use the banking feature, there will be gaps/steps visible, and there isn't much we can do about this. Therefore, it may not be advisable for roads with complicated geometry. A plugin which creates a surface from triangles, or a program like blender, may be more suitable.
+
+Currently, bank angles aren't preserved between curves.
+
+See Issues for more.
 
 # Getting involved
 
-We are still in the planning phase. Feel free to make an Issue if you want to open a discussion topic. Once we start contributing there will be guidelines etc, and possibly a thread in the OSS server. Contact me - I can add you to a discord group!
+We welcome contributions. This project is currently maintained by @anthony0br and @arandomollie, but there are several other active contributors. Read the [CONTRIBUTING.md](https://github.com/Open-Source-Transport/roblox-path-plugin/blob/main/CONTRIBUTING.md) file and get in touch!
+
+# License
+
+All current and future versions of this software are [licensed under GNU GPL-3.0](https://github.com/Open-Source-Transport/roblox-path-plugin/blob/main/LICENSE). We have put significant time and effort into this free resource - if you use our code in your projects, please open source them!
