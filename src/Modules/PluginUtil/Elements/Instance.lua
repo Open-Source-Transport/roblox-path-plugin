@@ -32,6 +32,12 @@ end)
 
 game:GetService("UserInputService").InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.Escape then
+
+        currentActive:get().Value:set(game.Selection:Get()[1])
+        if currentActive:get().OnChange then
+            currentActive:get().OnChange(currentActive:get().Value:get())
+        end
+
         currentActive:set{
             Value = nil,
             OnChange = nil
@@ -114,7 +120,7 @@ return function(pluginUtil, i: number, elemData: Types.Property<Instance>)
                 BackgroundColor3 = pluginUtil.CONFIG.accentColor,
                 BorderSizePixel = 0,
                 TextColor3 = Computed(function()
-                    if (currentActive:get().Value) or (not cVal:get()) then
+                    if (currentActive:get().Value == cVal) or (not cVal:get()) then
                         return Color3.fromRGB(200, 200, 200)
                     else
                         return Color3.fromRGB(255, 255, 255)
@@ -125,7 +131,7 @@ return function(pluginUtil, i: number, elemData: Types.Property<Instance>)
                 TextTruncate = Enum.TextTruncate.AtEnd,
                 ClipsDescendants = true,
                 Text = Computed(function()
-                    if currentActive:get().Value then
+                    if currentActive:get().Value == cVal then
                         return elemData.SelectingText or "Select instance"
                     end
                     local c = cVal:get()
