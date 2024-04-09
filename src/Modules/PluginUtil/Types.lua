@@ -17,6 +17,7 @@ export type ToggleButton = {
 
 export type Text = {
 	Type: "Text",
+	Key: string?,
 	Text: string,
 	Tooltip: string?,
 }
@@ -37,7 +38,9 @@ export type Property<T> = {
 
 export type InstanceTree = {
 	Header: string,
-	InstanceType: "Model" | "BasePart"?,
+	InstanceType: string,
+	DefaultValue: Instance?,
+	Tooltip: string?,
 	Source: Instance,
 	Recursive: boolean?,
 	Type: "InstanceTree",
@@ -48,8 +51,8 @@ export type Checklist = {
 	Header: string,
 	DefaultValues: boolean,
 	Tooltip: string?,
-	Options: { string } | { get: () -> { string } },
-	Update: { get: () -> boolean, set: (value: boolean) -> nil },
+	Options: { get: ({}) -> { string } },
+	Update: { get: ({}) -> boolean, set: ({}, value: boolean) -> nil },
 	Type: "Checklist",
 	OnChange: (value: { string }) -> nil,
 }

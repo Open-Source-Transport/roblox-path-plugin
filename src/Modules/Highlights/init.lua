@@ -16,6 +16,10 @@ return {
             highlightInfo = highlightConfigs[id] or highlightConfigs.Default
         end
 
+        if not highlightInfo then
+            return
+        end
+
         self.highlights[id] = fusion.New "Highlight" {
             Adornee = instance,
             FillColor = highlightInfo.fill or Color3.fromRGB(255, 0, 0),

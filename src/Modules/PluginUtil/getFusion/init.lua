@@ -1,4 +1,4 @@
-local fusion: ModuleScript
+local fusion: Instance?
 
 local checkedBefore = {}
 

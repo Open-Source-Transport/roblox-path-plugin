@@ -208,7 +208,6 @@ function Path.new()
 			for i, v in ipairs(segments) do
 				local radius
 				local length
-				local orientation
 				local cf0
 				local template = i > 1 and segments[i - 1] or self.template
 				if v:IsA("BasePart") then

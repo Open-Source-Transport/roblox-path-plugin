@@ -3,12 +3,7 @@ local fusion = require(script.Parent.Parent.Parent.getFusion)
 local New = fusion.New
 local Children = fusion.Children
 local OnEvent = fusion.OnEvent
-local Value = fusion.Value
 local Computed = fusion.Computed
-local ForPairs = fusion.ForPairs
-local ForValues = fusion.ForValues
-local Spring = fusion.Spring
-local OnChange = fusion.OnChange
 
 return function(pluginUtil)
 	return New("Frame")({

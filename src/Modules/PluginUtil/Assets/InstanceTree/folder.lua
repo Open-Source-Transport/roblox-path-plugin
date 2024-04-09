@@ -5,10 +5,7 @@ local Children = fusion.Children
 local OnEvent = fusion.OnEvent
 local Value = fusion.Value
 local Computed = fusion.Computed
-local ForPairs = fusion.ForPairs
-local ForValues = fusion.ForValues
 local Spring = fusion.Spring
-local OnChange = fusion.OnChange
 
 return function(pluginUtil, folder, parent, instanceType, resultValue, callback)
 	local folderFrame

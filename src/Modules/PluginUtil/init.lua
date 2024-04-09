@@ -1,21 +1,16 @@
-local RUS = game:GetService("RunService")
+--PluginUtil.lua
+--A utility to make working with plugins easier, providing standardised UI elements
+--Author: roblox: @ARandomAtom github: @arandomollie
 
-local UIS = game:GetService("UserInputService")
+local RUS = game:GetService("RunService")
 
 --Fusion functions
 local fusion = require(script.getFusion)
 
 local Types = require(script.Types)
 
-local New = fusion.New
-local Children = fusion.Children
-local OnEvent = fusion.OnEvent
 local Value = fusion.Value
-local Computed = fusion.Computed
-local ForPairs = fusion.ForPairs
-local ForValues = fusion.ForValues
 local Spring = fusion.Spring
-local OnChange = fusion.OnChange
 
 return {
 
@@ -292,6 +287,7 @@ return {
 			return f
 		else
 			warn("No element for type " .. elemData.Type .. ": not rendering")
+			return
 		end
 	end,
 }

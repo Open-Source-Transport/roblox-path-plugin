@@ -7,9 +7,7 @@ local OnEvent = fusion.OnEvent
 local Value = fusion.Value
 local Computed = fusion.Computed
 local ForPairs = fusion.ForPairs
-local ForValues = fusion.ForValues
 local Spring = fusion.Spring
-local OnChange = fusion.OnChange
 
 return function(pluginUtil, i: number, elemData: Types.Checklist)
 	return New("Frame")({

@@ -6,9 +6,6 @@ local Children = fusion.Children
 local OnEvent = fusion.OnEvent
 local Value = fusion.Value
 local Computed = fusion.Computed
-local ForPairs = fusion.ForPairs
-local ForValues = fusion.ForValues
-local Spring = fusion.Spring
 local OnChange = fusion.OnChange
 
 return function(pluginUtil, i: number, elemData: Types.InstanceTree)
@@ -31,7 +28,7 @@ return function(pluginUtil, i: number, elemData: Types.InstanceTree)
 				end
 			end
 			if not startVal:get() then
-				warn("No instances of type " .. elemData.InstanceType .. " found in " .. elemData.Source:GetFullName())
+				warn("No instances of type " .. tostring(elemData.InstanceType) .. " found in " .. elemData.Source:GetFullName())
 				return
 			end
 		end

@@ -6,17 +6,10 @@ local Children = fusion.Children
 local OnEvent = fusion.OnEvent
 local Value = fusion.Value
 local Computed = fusion.Computed
-local ForPairs = fusion.ForPairs
-local ForValues = fusion.ForValues
-local Spring = fusion.Spring
-local OnChange = fusion.OnChange
 
 return function(pluginUtil, i: number, elemData: Types.Property<number>)
-	if not elemData.Maximum then
-		elemData.Maximum = 1
-	end
-	if not elemData.Minimum then
-		elemData.Minimum = -1
+	if not (elemData.Maximum and elemData.Minimum) then
+		return
 	end
 	local val
 	if elemData.DefaultValue and typeof(elemData.DefaultValue) == "table" and elemData.DefaultValue.get then
@@ -173,6 +166,6 @@ return function(pluginUtil, i: number, elemData: Types.Property<number>)
 			}),
 		},
 	})
-	textbox = f.Box
+	textbox = f:FindFirstChild("Box")
 	return f
 end

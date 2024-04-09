@@ -19,7 +19,7 @@ local Path = require(modules.Path)
 local CreateAssets = require(modules.CreateAssets)
 local pluginUtil = require(modules.PluginUtil)
 local fusion = require(packages.fusion)
-local Types = require(modules.Types)
+local _Types = require(modules.Types)
 local highlights = require(modules.Highlights)
 
 local Value = fusion.Value
@@ -68,7 +68,7 @@ local function getGradientValue(curve)
 		if v:IsA("BasePart") then
 			length = length + v.Size.Z
 		elseif v:IsA("Model") then
-			local cf, size = v:GetBoundingBox()
+			local _, size = v:GetBoundingBox()
 			length = length + size.Z
 		end
 	end
